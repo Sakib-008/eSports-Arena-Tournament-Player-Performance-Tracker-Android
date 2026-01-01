@@ -87,6 +87,8 @@ public class MainActivity extends AppCompatActivity {
     private void onLoginSuccess(Player player) {
         String message = "Welcome, " + (player.getUsername() != null ? player.getUsername() : "player") + "!";
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
-        // Next step: navigate to player dashboard once implemented.
+        Intent intent = new Intent(this, PlayerDashboardActivity.class);
+        intent.putExtra(PlayerDashboardActivity.EXTRA_PLAYER_ID, player.getId());
+        startActivity(intent);
     }
 }
