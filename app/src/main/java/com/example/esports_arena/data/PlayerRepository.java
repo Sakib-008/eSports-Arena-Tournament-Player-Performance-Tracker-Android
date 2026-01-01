@@ -111,6 +111,13 @@ public class PlayerRepository {
         return players;
     }
 
+    public Task<Void> create(Player player) {
+        if (player == null) {
+            return Tasks.forResult(null);
+        }
+        return playersRef.child(String.valueOf(player.getId())).setValue(player);
+    }
+
     public Task<Void> update(Player player) {
         if (player == null) {
             return Tasks.forResult(null);
