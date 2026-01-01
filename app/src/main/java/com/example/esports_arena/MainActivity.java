@@ -1,7 +1,9 @@
 package com.example.esports_arena;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ProgressBar;
@@ -40,6 +42,19 @@ public class MainActivity extends AppCompatActivity {
         loginButton = findViewById(R.id.loginButton);
 
         loginButton.setOnClickListener(v -> attemptLogin());
+
+        // Debug probe: log player count to verify Firebase connectivity
+        // playerRepository.getAll().addOnCompleteListener(t -> {
+        //     if (!t.isSuccessful()) {
+        //         Log.e("DB_CHECK", "Error loading players", t.getException());
+        //     } else if (t.getResult() != null) {
+        //         Log.d("DB_CHECK", "Players count: " + t.getResult().size());
+        //         if (!t.getResult().isEmpty()) {
+        //             Player first = t.getResult().get(0);
+        //             Log.d("DB_CHECK", "First player username: " + first.getUsername());
+        //         }
+        //     }
+        // });
     }
 
     private void attemptLogin() {
@@ -66,17 +81,55 @@ public class MainActivity extends AppCompatActivity {
 
             Player player = task.getResult();
             if (player == null) {
-                statusText.setText("User not found");
+                // Fallback: case-insensitive scan to help debugging
+                setLoading(true);
+                playerRepository.getAll().addOnCompleteListener(allTask -> {
+                    setLoading(false);
+                    if (!allTask.isSuccessful() || allTask.getResult() == null) {
+                        statusText.setText("User not found");
+                        return;
+                    }
+                    Player match = null;
+                    for (Player p : allTask.getResult()) {
+                        if (p.getUsername() != null && p.getUsername().equalsIgnoreCase(username)) {
+                            match = p;
+                            break;
+                        }
+                    }
+                    if (match == null) {
+                        statusText.setText("User not found (check exact username)");
+                        Log.d("LOGIN", "Known usernames sample: " + sampleUsernames(allTask.getResult()));
+                        return;
+                    }
+                    verifyPasswordAndLogin(match, password);
+                });
                 return;
             }
 
-            if (!password.equals(player.getPassword())) {
-                statusText.setText("Invalid credentials");
-                return;
-            }
-
-            onLoginSuccess(player);
+            verifyPasswordAndLogin(player, password);
         });
+    }
+
+    private void verifyPasswordAndLogin(Player player, String password) {
+        if (!password.equals(player.getPassword())) {
+            statusText.setText("Invalid credentials");
+            return;
+        }
+        onLoginSuccess(player);
+    }
+
+    private String sampleUsernames(java.util.List<Player> players) {
+        StringBuilder sb = new StringBuilder();
+        int count = 0;
+        for (Player p : players) {
+            if (p.getUsername() != null) {
+                if (sb.length() > 0) sb.append(", ");
+                sb.append(p.getUsername());
+                count++;
+                if (count >= 5) break;
+            }
+        }
+        return sb.toString();
     }
 
     private void setLoading(boolean loadingState) {

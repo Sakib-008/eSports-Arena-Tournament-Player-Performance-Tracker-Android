@@ -168,6 +168,14 @@
             app:layout_constraintStart_toStartOf="parent"
             android:layout_marginTop="16dp" />
 
+        <Button
+            android:id="@+id/leaderVoteButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Team Leader Voting"
+            app:layout_constraintTop_toTopOf="@id/teamRosterHeader"
+            app:layout_constraintEnd_toEndOf="parent" />
+
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/teamRosterList"
             android:layout_width="0dp"

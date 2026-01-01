@@ -1,7 +1,9 @@
 package com.example.esports_arena.model;
 
 import androidx.annotation.Nullable;
+import com.google.firebase.database.IgnoreExtraProperties;
 
+@IgnoreExtraProperties
 public class Player {
     private int id;
     private String username;

@@ -1,11 +1,13 @@
 package com.example.esports_arena;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.util.Log;
 
 import androidx.activity.EdgeToEdge;
 import androidx.annotation.Nullable;
@@ -43,6 +45,7 @@ public class PlayerDashboardActivity extends AppCompatActivity {
     private Button updateAvailabilityButton;
     private RecyclerView teamRosterList;
     private TeamRosterAdapter teamRosterAdapter;
+    private Button leaderVoteButton;
 
     private PlayerRepository playerRepository;
     private TeamRepository teamRepository;
@@ -73,6 +76,7 @@ public class PlayerDashboardActivity extends AppCompatActivity {
         availabilityReasonInput = findViewById(R.id.availabilityReasonInput);
         updateAvailabilityButton = findViewById(R.id.updateAvailabilityButton);
         teamRosterList = findViewById(R.id.teamRosterList);
+        leaderVoteButton = findViewById(R.id.leaderVoteButton);
 
         teamRosterAdapter = new TeamRosterAdapter();
         teamRosterList.setLayoutManager(new LinearLayoutManager(this));
@@ -88,6 +92,7 @@ public class PlayerDashboardActivity extends AppCompatActivity {
         loadPlayer(playerId);
 
         updateAvailabilityButton.setOnClickListener(v -> updateAvailability());
+        leaderVoteButton.setOnClickListener(v -> openLeaderVote());
     }
 
     private void loadPlayer(int playerId) {
@@ -118,9 +123,11 @@ public class PlayerDashboardActivity extends AppCompatActivity {
         if (player.getTeamId() != null) {
             teamInfo.setText("Team: " + player.getTeamId());
             loadTeamAndRoster(player.getTeamId());
+            leaderVoteButton.setEnabled(true);
         } else {
             teamInfo.setText("Team: None");
             teamRosterAdapter.setPlayers(null);
+            leaderVoteButton.setEnabled(false);
         }
 
         statsKills.setText("Kills: " + player.getTotalKills());
@@ -151,14 +158,27 @@ public class PlayerDashboardActivity extends AppCompatActivity {
                     String tag = team.getTag() != null ? team.getTag() : "";
                     teamInfo.setText(team.getName() + (tag.isEmpty() ? "" : " (" + tag + ")"));
                 }
+            } else {
+                Log.w("ROSTER", "Team load failed", teamTask.getException());
             }
 
             playerRepository.getByTeamId(teamId).addOnCompleteListener(playersTask -> {
                 setLoading(false);
                 if (playersTask.isSuccessful()) {
-                    teamRosterAdapter.setPlayers(playersTask.getResult());
+                    if (playersTask.getResult() != null) {
+                        Log.d("ROSTER", "Loaded " + playersTask.getResult().size() + " players for team " + teamId);
+                        teamRosterAdapter.setPlayers(playersTask.getResult());
+                        if (playersTask.getResult().isEmpty()) {
+                            status.setText("No teammates found for team " + teamId);
+                        }
+                    } else {
+                        Log.d("ROSTER", "No roster result for team " + teamId);
+                        status.setText("No teammates found for team " + teamId);
+                        teamRosterAdapter.setPlayers(null);
+                    }
                 } else {
                     status.setText("Failed to load team roster");
+                    Log.w("ROSTER", "Roster load failed", playersTask.getException());
                 }
             });
         });
@@ -185,5 +205,17 @@ public class PlayerDashboardActivity extends AppCompatActivity {
                 status.setText("Failed to update availability");
             }
         });
+    }
+
+    private void openLeaderVote() {
+        if (currentPlayer == null || currentPlayer.getTeamId() == null) {
+            status.setText("No team available for voting");
+            return;
+        }
+
+        Intent intent = new Intent(this, LeaderVoteActivity.class);
+        intent.putExtra(LeaderVoteActivity.EXTRA_TEAM_ID, currentPlayer.getTeamId());
+        intent.putExtra(LeaderVoteActivity.EXTRA_PLAYER_ID, currentPlayer.getId());
+        startActivity(intent);
     }
 }

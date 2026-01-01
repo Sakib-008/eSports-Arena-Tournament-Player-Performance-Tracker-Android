@@ -62,20 +62,53 @@ public class PlayerRepository {
     }
 
     public Task<List<Player>> getByTeamId(int teamId) {
+        // Primary: numeric match on teamId
         return playersRef.orderByChild("teamId").equalTo(teamId).get()
-                .continueWith(callbackExecutor, task -> {
-                    List<Player> players = new ArrayList<>();
-                    if (!task.isSuccessful() || task.getResult() == null) {
-                        return players;
+                .continueWithTask(callbackExecutor, task -> {
+                    List<Player> players = collectPlayers(task);
+                    if (!players.isEmpty()) {
+                        return Tasks.forResult(players);
                     }
-                    for (DataSnapshot child : task.getResult().getChildren()) {
-                        Player player = child.getValue(Player.class);
-                        if (player != null) {
-                            players.add(player);
+                    // Fallback: if DB stored teamId as string, do a manual filter
+                    return playersRef.get().continueWith(callbackExecutor, allTask -> {
+                        List<Player> fallback = new ArrayList<>();
+                        if (!allTask.isSuccessful() || allTask.getResult() == null) {
+                            return fallback;
                         }
-                    }
-                    return players;
+                        for (DataSnapshot child : allTask.getResult().getChildren()) {
+                            Player p = child.getValue(Player.class);
+                            if (p != null && p.getTeamId() != null && p.getTeamId() == teamId) {
+                                fallback.add(p);
+                                continue;
+                            }
+                            Object rawTeamId = child.child("teamId").getValue();
+                            if (p != null && rawTeamId instanceof String) {
+                                try {
+                                    if (Integer.parseInt((String) rawTeamId) == teamId) {
+                                        fallback.add(p);
+                                    }
+                                } catch (NumberFormatException ignore) {
+                                    // ignore invalid string
+                                }
+                            }
+                        }
+                        return fallback;
+                    });
                 });
+    }
+
+    private List<Player> collectPlayers(Task<DataSnapshot> task) {
+        List<Player> players = new ArrayList<>();
+        if (!task.isSuccessful() || task.getResult() == null) {
+            return players;
+        }
+        for (DataSnapshot child : task.getResult().getChildren()) {
+            Player player = child.getValue(Player.class);
+            if (player != null) {
+                players.add(player);
+            }
+        }
+        return players;
     }
 
     public Task<Void> update(Player player) {
