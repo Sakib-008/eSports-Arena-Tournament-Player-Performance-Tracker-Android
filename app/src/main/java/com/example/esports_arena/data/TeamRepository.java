@@ -5,6 +5,8 @@ import com.google.android.gms.tasks.Task;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseReference;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
@@ -26,6 +28,22 @@ public class TeamRepository {
             }
             DataSnapshot snapshot = task.getResult();
             return snapshot.getValue(Team.class);
+        });
+    }
+
+    public Task<List<Team>> getAll() {
+        return teamsRef.get().continueWith(callbackExecutor, task -> {
+            List<Team> teams = new ArrayList<>();
+            if (!task.isSuccessful() || task.getResult() == null) {
+                return teams;
+            }
+            for (DataSnapshot child : task.getResult().getChildren()) {
+                Team team = child.getValue(Team.class);
+                if (team != null) {
+                    teams.add(team);
+                }
+            }
+            return teams;
         });
     }
 }

@@ -113,25 +113,65 @@ public class PlayerStatsFragment extends Fragment {
                 statsStatus.setText("Player not found");
                 return;
             }
+            
+            android.util.Log.d("PlayerStats", "Player loaded: " + player.getUsername());
+            if (player.getTournamentStats() != null) {
+                android.util.Log.d("PlayerStats", "Tournament stats: " + player.getTournamentStats().size() + " tournaments");
+                android.util.Log.d("PlayerStats", "Tournament names: " + player.getTournamentStats().keySet());
+            } else {
+                android.util.Log.d("PlayerStats", "Tournament stats is NULL");
+            }
+            
             cachedPlayer = player;
-            populateTournamentSelector(player);
-            renderCurrentScope();
+            populateTournamentSelector(player); // This is async, renderCurrentScope is called inside it
         });
     }
 
     private void populateTournamentSelector(Player player) {
         List<String> scopes = new ArrayList<>();
         scopes.add("Overall");
-        Map<String, TournamentStats> tournamentStats = player.getTournamentStats();
-        if (tournamentStats != null && !tournamentStats.isEmpty()) {
-            scopes.addAll(tournamentStats.keySet());
-        }
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_list_item_1, scopes);
-        statsTournamentSelector.setAdapter(adapter);
-        String current = statsTournamentSelector.getText() != null ? statsTournamentSelector.getText().toString() : "";
-        if (!scopes.contains(current)) {
-            statsTournamentSelector.setText(scopes.get(0), false);
-        }
+        
+        android.util.Log.d("PlayerStats", "populateTournamentSelector() called");
+        
+        // First try to fetch tournaments directly from database
+        playerRepository.getTournamentNames().addOnCompleteListener(task -> {
+            android.util.Log.d("PlayerStats", "getTournamentNames task completed - Success: " + task.isSuccessful());
+            List<String> finalScopes = new ArrayList<>(scopes);
+            
+            if (task.isSuccessful() && task.getResult() != null) {
+                List<String> tournaments = task.getResult();
+                android.util.Log.d("PlayerStats", "Got " + tournaments.size() + " tournaments from database: " + tournaments);
+                finalScopes.addAll(tournaments);
+            } else {
+                // Fallback: use player object
+                android.util.Log.d("PlayerStats", "Falling back to player object for tournaments");
+                Map<String, TournamentStats> tournamentStats = player.getTournamentStats();
+                if (tournamentStats != null && !tournamentStats.isEmpty()) {
+                    finalScopes.addAll(tournamentStats.keySet());
+                    android.util.Log.d("PlayerStats", "Found tournaments from player: " + tournamentStats.keySet());
+                } else {
+                    android.util.Log.d("PlayerStats", "No tournament stats in player object");
+                }
+            }
+            
+            // Remove duplicates
+            List<String> distinctScopes = new ArrayList<>();
+            for (String scope : finalScopes) {
+                if (!distinctScopes.contains(scope)) {
+                    distinctScopes.add(scope);
+                }
+            }
+            
+            android.util.Log.d("PlayerStats", "Final scopes to display: " + distinctScopes);
+            ArrayAdapter<String> adapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_list_item_1, distinctScopes);
+            statsTournamentSelector.setAdapter(adapter);
+            String current = statsTournamentSelector.getText() != null ? statsTournamentSelector.getText().toString() : "";
+            if (!distinctScopes.contains(current)) {
+                statsTournamentSelector.setText(distinctScopes.get(0), false);
+            }
+            // Now render after tournament selector is populated
+            renderCurrentScope();
+        });
     }
 
     private void renderText(ScopedStats stats) {
@@ -204,11 +244,20 @@ public class PlayerStatsFragment extends Fragment {
 
     private ScopedStats scopedStatsForCurrentSelection(Player player) {
         String selection = statsTournamentSelector.getText() != null ? statsTournamentSelector.getText().toString() : "Overall";
+        android.util.Log.d("PlayerStats", "Current selection: " + selection);
         if (!"Overall".equalsIgnoreCase(selection)) {
             Map<String, TournamentStats> byTournament = player.getTournamentStats();
-            TournamentStats scoped = byTournament != null ? byTournament.get(selection) : null;
-            if (scoped != null) {
-                return ScopedStats.fromTournament(scoped);
+            if (byTournament != null) {
+                android.util.Log.d("PlayerStats", "Tournament map keys: " + byTournament.keySet());
+                TournamentStats scoped = byTournament.get(selection);
+                if (scoped != null) {
+                    android.util.Log.d("PlayerStats", "Found tournament stats: " + selection);
+                    return ScopedStats.fromTournament(scoped);
+                } else {
+                    android.util.Log.d("PlayerStats", "Tournament not found in map: " + selection);
+                }
+            } else {
+                android.util.Log.d("PlayerStats", "Tournament map is null");
             }
         }
         return ScopedStats.fromPlayer(player);

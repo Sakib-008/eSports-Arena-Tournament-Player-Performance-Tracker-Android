@@ -174,18 +174,13 @@ public class LeaderVoteActivity extends AppCompatActivity {
             if (task.isSuccessful() && task.getResult() != null) {
                 LeaderVote existingVote = task.getResult();
                 currentVotedCandidateId = existingVote.getCandidateId();
+                android.util.Log.d("LeaderVote", "Found existing vote from Firebase for candidate: " + currentVotedCandidateId);
                 adapter.setVotingEnabled(false);
                 updateVotedIndicator();
             } else {
-                int localVote = prefs.getInt(voteKey(), -1);
-                if (localVote != -1) {
-                    currentVotedCandidateId = localVote;
-                    adapter.setVotingEnabled(false);
-                    updateVotedIndicator();
-                } else {
-                    adapter.setVotingEnabled(true);
-                    votedIndicator.setVisibility(View.GONE);
-                }
+                android.util.Log.d("LeaderVote", "No existing vote found in Firebase for this voter");
+                adapter.setVotingEnabled(true);
+                votedIndicator.setVisibility(View.GONE);
             }
         });
     }

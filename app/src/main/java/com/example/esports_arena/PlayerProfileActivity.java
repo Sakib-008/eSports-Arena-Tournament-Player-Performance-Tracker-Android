@@ -43,8 +43,10 @@ public class PlayerProfileActivity extends AppCompatActivity {
                 tab.setText("Profile");
             } else if (position == 1) {
                 tab.setText("Stats");
-            } else {
+            } else if (position == 2) {
                 tab.setText("Team");
+            } else {
+                tab.setText("Leaderboard");
             }
         }).attach();
     }

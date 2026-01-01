@@ -9,7 +9,9 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseReference;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
@@ -125,11 +127,50 @@ public class PlayerRepository {
         return playersRef.child(String.valueOf(player.getId())).setValue(player);
     }
 
-    @Nullable
-    public static String sanitizeEmail(String email) {
-        if (email == null) {
-            return null;
-        }
-        return email.trim().toLowerCase();
+    public Task<List<String>> getTournamentNames() {
+        return com.google.firebase.database.FirebaseDatabase.getInstance()
+                .getReference("tournaments")
+                .get()
+                .continueWith(callbackExecutor, task -> {
+                    List<String> tournaments = new ArrayList<>();
+                    android.util.Log.d("PlayerRepo", "getTournamentNames() called - checking tournaments node");
+                    
+                    if (!task.isSuccessful()) {
+                        android.util.Log.e("PlayerRepo", "Task failed: " + (task.getException() != null ? task.getException().getMessage() : "unknown"));
+                        return tournaments;
+                    }
+                    
+                    if (task.getResult() == null) {
+                        android.util.Log.d("PlayerRepo", "Tournaments node doesn't exist");
+                        return tournaments;
+                    }
+                    
+                    for (DataSnapshot tournamentNode : task.getResult().getChildren()) {
+                        String name = tournamentNode.child("name").getValue(String.class);
+                        String id = tournamentNode.getKey();
+                        android.util.Log.d("PlayerRepo", "Tournament found - ID: " + id + ", Name: " + name);
+                        
+                        if (name != null && !tournaments.contains(name)) {
+                            tournaments.add(name);
+                        }
+                    }
+                    android.util.Log.d("PlayerRepo", "Total tournaments collected: " + tournaments.size() + " -> " + tournaments);
+                    return tournaments;
+                });
+    }
+
+    public Task<Map<String, Object>> getTournamentStatsForPlayer(int playerId, String tournamentName) {
+        return playersRef.child(String.valueOf(playerId)).child("tournamentStats").child(tournamentName).get()
+                .continueWith(callbackExecutor, task -> {
+                    Map<String, Object> result = new java.util.HashMap<>();
+                    if (!task.isSuccessful() || task.getResult() == null) {
+                        return result;
+                    }
+                    DataSnapshot snapshot = task.getResult();
+                    for (DataSnapshot child : snapshot.getChildren()) {
+                        result.put(child.getKey(), child.getValue());
+                    }
+                    return result;
+                });
     }
 }
