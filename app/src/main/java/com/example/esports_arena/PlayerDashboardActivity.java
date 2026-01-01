@@ -2,6 +2,7 @@ package com.example.esports_arena;
 
 import android.os.Bundle;
 import android.view.View;
+import android.widget.Button;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -9,9 +10,16 @@ import android.widget.Toast;
 import androidx.activity.EdgeToEdge;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.esports_arena.data.PlayerRepository;
+import com.example.esports_arena.data.TeamRepository;
 import com.example.esports_arena.model.Player;
+import com.example.esports_arena.model.Team;
+import com.example.esports_arena.ui.TeamRosterAdapter;
+import com.google.android.material.switchmaterial.SwitchMaterial;
+import com.google.android.material.textfield.TextInputEditText;
 
 import java.text.DecimalFormat;
 
@@ -30,9 +38,16 @@ public class PlayerDashboardActivity extends AppCompatActivity {
     private TextView statsWinRate;
     private TextView status;
     private ProgressBar loading;
+    private SwitchMaterial availabilitySwitch;
+    private TextInputEditText availabilityReasonInput;
+    private Button updateAvailabilityButton;
+    private RecyclerView teamRosterList;
+    private TeamRosterAdapter teamRosterAdapter;
 
     private PlayerRepository playerRepository;
+    private TeamRepository teamRepository;
     private final DecimalFormat decimalFormat = new DecimalFormat("0.00");
+    private Player currentPlayer;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -41,6 +56,7 @@ public class PlayerDashboardActivity extends AppCompatActivity {
         setContentView(R.layout.activity_player_dashboard);
 
         playerRepository = new PlayerRepository();
+        teamRepository = new TeamRepository();
 
         playerName = findViewById(R.id.playerName);
         playerEmail = findViewById(R.id.playerEmail);
@@ -53,6 +69,14 @@ public class PlayerDashboardActivity extends AppCompatActivity {
         statsWinRate = findViewById(R.id.statsWinRate);
         status = findViewById(R.id.dashboardStatus);
         loading = findViewById(R.id.dashboardLoading);
+        availabilitySwitch = findViewById(R.id.availabilitySwitch);
+        availabilityReasonInput = findViewById(R.id.availabilityReasonInput);
+        updateAvailabilityButton = findViewById(R.id.updateAvailabilityButton);
+        teamRosterList = findViewById(R.id.teamRosterList);
+
+        teamRosterAdapter = new TeamRosterAdapter();
+        teamRosterList.setLayoutManager(new LinearLayoutManager(this));
+        teamRosterList.setAdapter(teamRosterAdapter);
 
         int playerId = getIntent().getIntExtra(EXTRA_PLAYER_ID, -1);
         if (playerId == -1) {
@@ -62,6 +86,8 @@ public class PlayerDashboardActivity extends AppCompatActivity {
         }
 
         loadPlayer(playerId);
+
+        updateAvailabilityButton.setOnClickListener(v -> updateAvailability());
     }
 
     private void loadPlayer(int playerId) {
@@ -79,6 +105,7 @@ public class PlayerDashboardActivity extends AppCompatActivity {
                 return;
             }
 
+            currentPlayer = player;
             bind(player);
         });
     }
@@ -90,8 +117,10 @@ public class PlayerDashboardActivity extends AppCompatActivity {
 
         if (player.getTeamId() != null) {
             teamInfo.setText("Team: " + player.getTeamId());
+            loadTeamAndRoster(player.getTeamId());
         } else {
             teamInfo.setText("Team: None");
+            teamRosterAdapter.setPlayers(null);
         }
 
         statsKills.setText("Kills: " + player.getTotalKills());
@@ -99,9 +128,62 @@ public class PlayerDashboardActivity extends AppCompatActivity {
         statsAssists.setText("Assists: " + player.getTotalAssists());
         statsKd.setText("K/D: " + decimalFormat.format(player.getKdRatio()));
         statsWinRate.setText("Win Rate: " + decimalFormat.format(player.getWinRate()) + "%");
+
+        availabilitySwitch.setChecked(player.isAvailable());
+        if (player.getAvailabilityReason() != null) {
+            availabilityReasonInput.setText(player.getAvailabilityReason());
+        } else {
+            availabilityReasonInput.setText("");
+        }
     }
 
     private void setLoading(boolean loadingState) {
         loading.setVisibility(loadingState ? View.VISIBLE : View.GONE);
+        updateAvailabilityButton.setEnabled(!loadingState);
+    }
+
+    private void loadTeamAndRoster(int teamId) {
+        setLoading(true);
+        teamRepository.getById(teamId).addOnCompleteListener(teamTask -> {
+            if (teamTask.isSuccessful()) {
+                Team team = teamTask.getResult();
+                if (team != null && team.getName() != null) {
+                    String tag = team.getTag() != null ? team.getTag() : "";
+                    teamInfo.setText(team.getName() + (tag.isEmpty() ? "" : " (" + tag + ")"));
+                }
+            }
+
+            playerRepository.getByTeamId(teamId).addOnCompleteListener(playersTask -> {
+                setLoading(false);
+                if (playersTask.isSuccessful()) {
+                    teamRosterAdapter.setPlayers(playersTask.getResult());
+                } else {
+                    status.setText("Failed to load team roster");
+                }
+            });
+        });
+    }
+
+    private void updateAvailability() {
+        if (currentPlayer == null) {
+            status.setText("No player loaded");
+            return;
+        }
+
+        boolean available = availabilitySwitch.isChecked();
+        String reason = availabilityReasonInput.getText() != null ? availabilityReasonInput.getText().toString().trim() : "";
+
+        currentPlayer.setAvailable(available);
+        currentPlayer.setAvailabilityReason(reason.isEmpty() ? null : reason);
+
+        setLoading(true);
+        playerRepository.update(currentPlayer).addOnCompleteListener(task -> {
+            setLoading(false);
+            if (task.isSuccessful()) {
+                status.setText(available ? "Set to available" : "Set to unavailable");
+            } else {
+                status.setText("Failed to update availability");
+            }
+        });
     }
 }

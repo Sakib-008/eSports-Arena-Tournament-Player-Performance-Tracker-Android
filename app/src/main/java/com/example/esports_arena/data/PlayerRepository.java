@@ -61,6 +61,23 @@ public class PlayerRepository {
         });
     }
 
+    public Task<List<Player>> getByTeamId(int teamId) {
+        return playersRef.orderByChild("teamId").equalTo(teamId).get()
+                .continueWith(callbackExecutor, task -> {
+                    List<Player> players = new ArrayList<>();
+                    if (!task.isSuccessful() || task.getResult() == null) {
+                        return players;
+                    }
+                    for (DataSnapshot child : task.getResult().getChildren()) {
+                        Player player = child.getValue(Player.class);
+                        if (player != null) {
+                            players.add(player);
+                        }
+                    }
+                    return players;
+                });
+    }
+
     public Task<Void> update(Player player) {
         if (player == null) {
             return Tasks.forResult(null);
