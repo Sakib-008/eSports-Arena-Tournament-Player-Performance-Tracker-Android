@@ -1,6 +1,9 @@
 package com.example.esports_arena;
 
 import android.os.Bundle;
+import android.view.Menu;
+import android.view.MenuItem;
+import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.annotation.Nullable;
@@ -14,6 +17,7 @@ import com.google.android.material.tabs.TabLayoutMediator;
 public class PlayerProfileActivity extends AppCompatActivity {
 
     public static final String EXTRA_PLAYER_ID = "extra_player_id";
+    private int playerId;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -21,7 +25,10 @@ public class PlayerProfileActivity extends AppCompatActivity {
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_player_profile);
 
-        int playerId = getIntent().getIntExtra(EXTRA_PLAYER_ID, -1);
+        androidx.appcompat.widget.Toolbar toolbar = findViewById(R.id.profileToolbar);
+        setSupportActionBar(toolbar);
+
+        playerId = getIntent().getIntExtra(EXTRA_PLAYER_ID, -1);
         if (playerId == -1) {
             finish();
             return;
@@ -40,5 +47,33 @@ public class PlayerProfileActivity extends AppCompatActivity {
                 tab.setText("Team");
             }
         }).attach();
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        menu.add(Menu.NONE, 1, Menu.NONE, "Refresh")
+                .setIcon(android.R.drawable.ic_popup_sync)
+                .setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if (item.getItemId() == 1) {
+            refreshData();
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
+    private void refreshData() {
+        Toast.makeText(this, "Refreshing data...", Toast.LENGTH_SHORT).show();
+        ViewPager2 viewPager = findViewById(R.id.profileViewPager);
+        PlayerPagerAdapter adapter = (PlayerPagerAdapter) viewPager.getAdapter();
+        if (adapter != null) {
+            adapter.notifyItemChanged(0);
+            adapter.notifyItemChanged(1);
+            adapter.notifyItemChanged(2);
+        }
     }
 }

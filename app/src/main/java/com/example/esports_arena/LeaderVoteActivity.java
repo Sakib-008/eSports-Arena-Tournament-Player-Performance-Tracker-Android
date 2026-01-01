@@ -32,6 +32,7 @@ public class LeaderVoteActivity extends AppCompatActivity {
     private ProgressBar loading;
     private TextView resultsText;
     private TextView status;
+    private TextView votedIndicator;
 
     private final Map<Integer, Integer> voteCounts = new HashMap<>();
     private LeaderVoteAdapter adapter;
@@ -44,6 +45,8 @@ public class LeaderVoteActivity extends AppCompatActivity {
 
     private int teamId;
     private int voterId;
+    private Integer currentVotedCandidateId = null;
+    private final Map<Integer, String> candidateNames = new HashMap<>();
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -55,6 +58,7 @@ public class LeaderVoteActivity extends AppCompatActivity {
         loading = findViewById(R.id.voteLoading);
         resultsText = findViewById(R.id.resultsText);
         status = findViewById(R.id.voteStatus);
+        votedIndicator = findViewById(R.id.votedIndicator);
 
         teamId = getIntent().getIntExtra(EXTRA_TEAM_ID, -1);
         voterId = getIntent().getIntExtra(EXTRA_PLAYER_ID, -1);
@@ -73,8 +77,7 @@ public class LeaderVoteActivity extends AppCompatActivity {
         candidatesList.setLayoutManager(new LinearLayoutManager(this));
         candidatesList.setAdapter(adapter);
 
-        adapter.setVotingEnabled(!hasAlreadyVoted());
-
+        checkExistingVote();
         loadCandidates();
         loadResults();
     }
@@ -88,16 +91,21 @@ public class LeaderVoteActivity extends AppCompatActivity {
                 return;
             }
             List<Player> players = task.getResult();
+            for (Player p : players) {
+                candidateNames.put(p.getId(), p.getUsername());
+            }
             adapter.setCandidates(players);
+            updateVotedIndicator();
         });
     }
 
     private void loadResults() {
         voteRepository.getResults(teamId).addOnCompleteListener(task -> {
             if (task.isSuccessful() && task.getResult() != null) {
+                Map<Integer, Integer> results = task.getResult();
                 voteCounts.clear();
-                voteCounts.putAll(task.getResult());
-                adapter.updateCounts(voteCounts);
+                voteCounts.putAll(results);
+                adapter.notifyDataSetChanged();
                 resultsText.setText(formatResults());
             }
         });
@@ -107,19 +115,23 @@ public class LeaderVoteActivity extends AppCompatActivity {
         if (voteCounts.isEmpty()) {
             return "No votes yet";
         }
-        StringBuilder sb = new StringBuilder("Current votes:\n");
-        for (Map.Entry<Integer, Integer> entry : voteCounts.entrySet()) {
-            sb.append("• Candidate ").append(entry.getKey())
-                    .append(": ").append(entry.getValue()).append(" votes\n");
-        }
+        StringBuilder sb = new StringBuilder("Current Voting Results:\n\n");
+        voteCounts.entrySet().stream()
+                .sorted((a, b) -> Integer.compare(b.getValue(), a.getValue()))
+                .forEach(entry -> {
+                    String name = candidateNames.getOrDefault(entry.getKey(), "Player " + entry.getKey());
+                    sb.append("• ").append(name)
+                            .append(": ").append(entry.getValue())
+                            .append(entry.getValue() == 1 ? " vote" : " votes")
+                            .append("\n");
+                });
         return sb.toString().trim();
     }
 
     private void castVote(Player candidate) {
         status.setText("");
-        if (hasAlreadyVoted()) {
+        if (currentVotedCandidateId != null) {
             status.setText("You already voted");
-            adapter.setVotingEnabled(false);
             return;
         }
         LeaderVote vote = new LeaderVote(teamId, voterId, candidate.getId(), System.currentTimeMillis());
@@ -127,9 +139,11 @@ public class LeaderVoteActivity extends AppCompatActivity {
         voteRepository.submitVote(vote).addOnCompleteListener(task -> {
             setLoading(false);
             if (task.isSuccessful()) {
-                status.setText("Vote cast for " + candidate.getUsername());
+                status.setText("Vote cast successfully for " + candidate.getUsername());
+                currentVotedCandidateId = candidate.getId();
                 markVoted(candidate.getId());
                 adapter.setVotingEnabled(false);
+                updateVotedIndicator();
                 loadResults();
             } else {
                 status.setText("Failed to cast vote");
@@ -153,5 +167,37 @@ public class LeaderVoteActivity extends AppCompatActivity {
 
     private String voteKey() {
         return "team_" + teamId + "_voter_" + voterId;
+    }
+
+    private void checkExistingVote() {
+        voteRepository.getVoteByVoter(teamId, voterId).addOnCompleteListener(task -> {
+            if (task.isSuccessful() && task.getResult() != null) {
+                LeaderVote existingVote = task.getResult();
+                currentVotedCandidateId = existingVote.getCandidateId();
+                adapter.setVotingEnabled(false);
+                updateVotedIndicator();
+            } else {
+                int localVote = prefs.getInt(voteKey(), -1);
+                if (localVote != -1) {
+                    currentVotedCandidateId = localVote;
+                    adapter.setVotingEnabled(false);
+                    updateVotedIndicator();
+                } else {
+                    adapter.setVotingEnabled(true);
+                    votedIndicator.setVisibility(View.GONE);
+                }
+            }
+        });
+    }
+
+    private void updateVotedIndicator() {
+        if (currentVotedCandidateId != null) {
+            String candidateName = candidateNames.getOrDefault(currentVotedCandidateId, "Player " + currentVotedCandidateId);
+            votedIndicator.setText("✓ You voted for: " + candidateName);
+            votedIndicator.setVisibility(View.VISIBLE);
+            votedIndicator.setTextColor(0xFF2ecc71);
+        } else {
+            votedIndicator.setVisibility(View.GONE);
+        }
     }
 }

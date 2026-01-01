@@ -1,9 +1,11 @@
 package com.example.esports_arena;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
@@ -32,11 +34,13 @@ public class TeamFragment extends Fragment {
     private TextView teamStatus;
     private ProgressBar teamLoading;
     private RecyclerView teamRecycler;
+    private Button voteLeaderButton;
 
     private TeamRosterAdapter rosterAdapter;
     private PlayerRepository playerRepository;
     private TeamRepository teamRepository;
     private int playerId;
+    private int teamId = -1;
 
     public static TeamFragment newInstance(int playerId) {
         TeamFragment fragment = new TeamFragment();
@@ -62,6 +66,7 @@ public class TeamFragment extends Fragment {
         teamStatus = view.findViewById(R.id.teamStatus);
         teamLoading = view.findViewById(R.id.teamLoading);
         teamRecycler = view.findViewById(R.id.teamRecycler);
+        voteLeaderButton = view.findViewById(R.id.voteLeaderButton);
 
         rosterAdapter = new TeamRosterAdapter();
         teamRecycler.setLayoutManager(new LinearLayoutManager(requireContext()));
@@ -76,6 +81,7 @@ public class TeamFragment extends Fragment {
             return;
         }
 
+        voteLeaderButton.setOnClickListener(v -> openVoting());
         loadPlayerAndTeam();
     }
 
@@ -91,9 +97,10 @@ public class TeamFragment extends Fragment {
             if (player.getTeamId() == null) {
                 setLoading(false);
                 teamStatus.setText("This player is not assigned to a team.");
+                voteLeaderButton.setEnabled(false);
                 return;
             }
-            int teamId = player.getTeamId();
+            teamId = player.getTeamId();
             loadTeam(teamId);
             loadRoster(teamId);
         });
@@ -145,5 +152,16 @@ public class TeamFragment extends Fragment {
     private void setLoading(boolean loading) {
         teamLoading.setVisibility(loading ? View.VISIBLE : View.GONE);
         teamRecycler.setVisibility(loading ? View.INVISIBLE : View.VISIBLE);
+    }
+
+    private void openVoting() {
+        if (teamId == -1) {
+            teamStatus.setText("No team assigned");
+            return;
+        }
+        Intent intent = new Intent(requireContext(), LeaderVoteActivity.class);
+        intent.putExtra(LeaderVoteActivity.EXTRA_TEAM_ID, teamId);
+        intent.putExtra(LeaderVoteActivity.EXTRA_PLAYER_ID, playerId);
+        startActivity(intent);
     }
 }

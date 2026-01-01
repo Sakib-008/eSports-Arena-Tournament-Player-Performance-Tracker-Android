@@ -88,6 +88,14 @@
                 android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
                 android:layout_marginTop="4dp" />
 
+            <TextView
+                android:id="@+id/statsMatchesWon"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Matches Won: 0"
+                android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
+                android:layout_marginTop="4dp" />
+
         </LinearLayout>
 
         <com.github.mikephil.charting.charts.BarChart

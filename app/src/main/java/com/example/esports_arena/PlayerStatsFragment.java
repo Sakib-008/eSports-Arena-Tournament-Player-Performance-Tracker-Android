@@ -46,6 +46,7 @@ public class PlayerStatsFragment extends Fragment {
     private TextView statsKd;
     private TextView statsWinRate;
     private TextView statsMatches;
+    private TextView statsMatchesWon;
     private MaterialAutoCompleteTextView statsTournamentSelector;
 
     private PlayerRepository playerRepository;
@@ -78,6 +79,7 @@ public class PlayerStatsFragment extends Fragment {
         statsKd = view.findViewById(R.id.statsKd);
         statsWinRate = view.findViewById(R.id.statsWinRate);
         statsMatches = view.findViewById(R.id.statsMatches);
+        statsMatchesWon = view.findViewById(R.id.statsMatchesWon);
         statsTournamentSelector = view.findViewById(R.id.statsTournamentSelector);
 
         playerRepository = new PlayerRepository();
@@ -139,6 +141,7 @@ public class PlayerStatsFragment extends Fragment {
         statsKd.setText("K/D: " + stats.kdRatio);
         statsWinRate.setText("Win Rate: " + String.format("%.2f%%", stats.winRate));
         statsMatches.setText("Matches Played: " + stats.matchesPlayed);
+        statsMatchesWon.setText("Matches Won: " + stats.matchesWon);
     }
 
     private void renderCharts(ScopedStats stats) {

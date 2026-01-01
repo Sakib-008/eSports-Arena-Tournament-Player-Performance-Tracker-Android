@@ -41,4 +41,19 @@ public class LeaderVoteRepository {
             return counts;
         });
     }
+
+    public Task<LeaderVote> getVoteByVoter(int teamId, int voterId) {
+        return votesRef.child(String.valueOf(teamId)).get().continueWith(callbackExecutor, task -> {
+            if (!task.isSuccessful() || task.getResult() == null) {
+                return null;
+            }
+            for (DataSnapshot child : task.getResult().getChildren()) {
+                LeaderVote vote = child.getValue(LeaderVote.class);
+                if (vote != null && vote.getVoterId() == voterId) {
+                    return vote;
+                }
+            }
+            return null;
+        });
+    }
 }

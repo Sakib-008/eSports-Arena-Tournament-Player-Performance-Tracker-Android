@@ -9,6 +9,12 @@
         android:layout_height="wrap_content"
         android:theme="@style/ThemeOverlay.Material3.Dark.ActionBar">
 
+        <androidx.appcompat.widget.Toolbar
+            android:id="@+id/profileToolbar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            app:title="Profile" />
+
         <com.google.android.material.tabs.TabLayout
             android:id="@+id/profileTabLayout"
             android:layout_width="match_parent"

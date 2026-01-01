@@ -41,8 +41,8 @@ public class LeaderVoteAdapter extends RecyclerView.Adapter<LeaderVoteAdapter.Vi
     }
 
     public void updateCounts(Map<Integer, Integer> counts) {
-        currentCounts.clear();
-        if (counts != null) {
+        if (counts != null && currentCounts != counts) {
+            currentCounts.clear();
             currentCounts.putAll(counts);
         }
         notifyDataSetChanged();
@@ -66,7 +66,8 @@ public class LeaderVoteAdapter extends RecyclerView.Adapter<LeaderVoteAdapter.Vi
         holder.name.setText(player.getUsername() != null ? player.getUsername() : "");
         holder.role.setText(player.getRole() != null ? player.getRole() : "");
         Integer votes = currentCounts.get(player.getId());
-        holder.availability.setText(votes == null ? "0 votes" : votes + " votes");
+        int voteCount = votes != null ? votes : 0;
+        holder.availability.setText(voteCount + (voteCount == 1 ? " vote" : " votes"));
         holder.voteButton.setOnClickListener(v -> onVoteClick.onVote(player));
         holder.voteButton.setVisibility(View.VISIBLE);
         holder.voteButton.setEnabled(votingEnabled);
