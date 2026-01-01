@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="16dp"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/statsHeader"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Performance Overview"
+            android:textAppearance="@style/TextAppearance.Material3.TitleLarge" />
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/statsTournamentLayout"
+            style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:hint="Scope"
+            app:endIconMode="dropdown_menu">
+
+            <com.google.android.material.textfield.MaterialAutoCompleteTextView
+                android:id="@+id/statsTournamentSelector"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="text" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <LinearLayout
+            android:id="@+id/statsSummary"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/statsKills"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Kills: 0"
+                android:textAppearance="@style/TextAppearance.Material3.BodyLarge" />
+
+            <TextView
+                android:id="@+id/statsDeaths"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Deaths: 0"
+                android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
+                android:layout_marginTop="4dp" />
+
+            <TextView
+                android:id="@+id/statsAssists"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Assists: 0"
+                android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
+                android:layout_marginTop="4dp" />
+
+            <TextView
+                android:id="@+id/statsKd"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="K/D: 0"
+                android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
+                android:layout_marginTop="8dp" />
+
+            <TextView
+                android:id="@+id/statsWinRate"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Win Rate: 0%"
+                android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
+                android:layout_marginTop="4dp" />
+
+            <TextView
+                android:id="@+id/statsMatches"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Matches Played: 0"
+                android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
+                android:layout_marginTop="4dp" />
+
+        </LinearLayout>
+
+        <com.github.mikephil.charting.charts.BarChart
+            android:id="@+id/kdaBarChart"
+            android:layout_width="match_parent"
+            android:layout_height="250dp"
+            android:layout_marginTop="12dp" />
+
+        <com.github.mikephil.charting.charts.PieChart
+            android:id="@+id/winPieChart"
+            android:layout_width="match_parent"
+            android:layout_height="250dp"
+            android:layout_marginTop="16dp" />
+
+        <TextView
+            android:id="@+id/statsStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text=""
+            android:layout_marginTop="12dp"
+            android:textColor="@android:color/holo_red_dark" />
+
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>

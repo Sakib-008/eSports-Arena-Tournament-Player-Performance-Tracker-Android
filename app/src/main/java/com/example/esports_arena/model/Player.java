@@ -3,6 +3,8 @@ package com.example.esports_arena.model;
 import androidx.annotation.Nullable;
 import com.google.firebase.database.IgnoreExtraProperties;
 
+import java.util.Map;
+
 @IgnoreExtraProperties
 public class Player {
     private int id;
@@ -20,6 +22,7 @@ public class Player {
     private int matchesWon;
     private boolean available;
     private String availabilityReason;
+    private Map<String, TournamentStats> tournamentStats;
 
     public Player() {
         // Firebase requires a public no-arg constructor
@@ -144,6 +147,15 @@ public class Player {
 
     public void setAvailabilityReason(String availabilityReason) {
         this.availabilityReason = availabilityReason;
+    }
+
+    @Nullable
+    public Map<String, TournamentStats> getTournamentStats() {
+        return tournamentStats;
+    }
+
+    public void setTournamentStats(@Nullable Map<String, TournamentStats> tournamentStats) {
+        this.tournamentStats = tournamentStats;
     }
 
     public double getKdRatio() {
