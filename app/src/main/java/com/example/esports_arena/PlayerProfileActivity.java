@@ -34,8 +34,10 @@ public class PlayerProfileActivity extends AppCompatActivity {
         new TabLayoutMediator(tabLayout, viewPager, (tab, position) -> {
             if (position == 0) {
                 tab.setText("Profile");
-            } else {
+            } else if (position == 1) {
                 tab.setText("Stats");
+            } else {
+                tab.setText("Team");
             }
         }).attach();
     }

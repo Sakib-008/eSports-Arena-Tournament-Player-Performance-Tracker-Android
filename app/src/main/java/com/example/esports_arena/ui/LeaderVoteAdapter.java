@@ -56,7 +56,7 @@ public class LeaderVoteAdapter extends RecyclerView.Adapter<LeaderVoteAdapter.Vi
     @NonNull
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_team_player, parent, false);
+        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_vote_player, parent, false);
         return new ViewHolder(view);
     }
 
