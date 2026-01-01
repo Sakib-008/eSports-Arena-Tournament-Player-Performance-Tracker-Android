@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "314360758418",
+    "firebase_url": "https://esports-arena-7fb9b-default-rtdb.firebaseio.com",
+    "project_id": "esports-arena-7fb9b",
+    "storage_bucket": "esports-arena-7fb9b.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:314360758418:android:3ea5b6ef307acbd3bc264b",
+        "android_client_info": {
+          "package_name": "com.example.esports_arena"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCvwnUhFxADak6pf8UPr1-pZTW7mgcok8A"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
