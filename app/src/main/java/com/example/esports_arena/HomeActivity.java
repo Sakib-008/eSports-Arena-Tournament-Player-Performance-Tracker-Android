@@ -19,7 +19,7 @@ public class HomeActivity extends AppCompatActivity {
         Button loginBtn = findViewById(R.id.homeLoginButton);
         Button signupBtn = findViewById(R.id.homeSignupButton);
 
-        loginBtn.setOnClickListener(v -> startActivity(new Intent(this, MainActivity.class)));
+        loginBtn.setOnClickListener(v -> startActivity(new Intent(this, LoginActivity.class)));
         signupBtn.setOnClickListener(v -> startActivity(new Intent(this, SignupActivity.class)));
     }
 }

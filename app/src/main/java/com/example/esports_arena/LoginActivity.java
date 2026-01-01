@@ -1,10 +1,11 @@
 package com.example.esports_arena;
 
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.TextUtils;
-import android.util.Log;
 import android.view.View;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -16,9 +17,12 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.example.esports_arena.data.PlayerRepository;
 import com.example.esports_arena.model.Player;
 import com.google.android.material.textfield.TextInputEditText;
+import com.google.android.material.textfield.TextInputLayout;
 
-public class MainActivity extends AppCompatActivity {
+public class LoginActivity extends AppCompatActivity {
 
+    private TextInputLayout usernameLayout;
+    private TextInputLayout passwordLayout;
     private TextInputEditText usernameInput;
     private TextInputEditText passwordInput;
     private TextView statusText;
@@ -35,6 +39,8 @@ public class MainActivity extends AppCompatActivity {
 
         playerRepository = new PlayerRepository();
 
+        usernameLayout = findViewById(R.id.usernameLayout);
+        passwordLayout = findViewById(R.id.passwordLayout);
         usernameInput = findViewById(R.id.usernameInput);
         passwordInput = findViewById(R.id.passwordInput);
         statusText = findViewById(R.id.statusText);
@@ -42,36 +48,26 @@ public class MainActivity extends AppCompatActivity {
         loginButton = findViewById(R.id.loginButton);
 
         loginButton.setOnClickListener(v -> attemptLogin());
-
-        // Debug probe: log player count to verify Firebase connectivity
-        // playerRepository.getAll().addOnCompleteListener(t -> {
-        //     if (!t.isSuccessful()) {
-        //         Log.e("DB_CHECK", "Error loading players", t.getException());
-        //     } else if (t.getResult() != null) {
-        //         Log.d("DB_CHECK", "Players count: " + t.getResult().size());
-        //         if (!t.getResult().isEmpty()) {
-        //             Player first = t.getResult().get(0);
-        //             Log.d("DB_CHECK", "First player username: " + first.getUsername());
-        //         }
-        //     }
-        // });
     }
 
     private void attemptLogin() {
         statusText.setText("");
+        usernameLayout.setError(null);
+        passwordLayout.setError(null);
         String username = usernameInput.getText() != null ? usernameInput.getText().toString().trim() : "";
         String password = passwordInput.getText() != null ? passwordInput.getText().toString() : "";
 
         if (TextUtils.isEmpty(username)) {
-            statusText.setText("Username required");
+            usernameLayout.setError("Username required");
             return;
         }
         if (TextUtils.isEmpty(password)) {
-            statusText.setText("Password required");
+            passwordLayout.setError("Password required");
             return;
         }
 
         setLoading(true);
+        hideKeyboard();
         playerRepository.getByUsername(username).addOnCompleteListener(task -> {
             setLoading(false);
             if (!task.isSuccessful()) {
@@ -81,7 +77,6 @@ public class MainActivity extends AppCompatActivity {
 
             Player player = task.getResult();
             if (player == null) {
-                // Fallback: case-insensitive scan to help debugging
                 setLoading(true);
                 playerRepository.getAll().addOnCompleteListener(allTask -> {
                     setLoading(false);
@@ -98,7 +93,6 @@ public class MainActivity extends AppCompatActivity {
                     }
                     if (match == null) {
                         statusText.setText("User not found (check exact username)");
-                        Log.d("LOGIN", "Known usernames sample: " + sampleUsernames(allTask.getResult()));
                         return;
                     }
                     verifyPasswordAndLogin(match, password);
@@ -118,30 +112,28 @@ public class MainActivity extends AppCompatActivity {
         onLoginSuccess(player);
     }
 
-    private String sampleUsernames(java.util.List<Player> players) {
-        StringBuilder sb = new StringBuilder();
-        int count = 0;
-        for (Player p : players) {
-            if (p.getUsername() != null) {
-                if (sb.length() > 0) sb.append(", ");
-                sb.append(p.getUsername());
-                count++;
-                if (count >= 5) break;
-            }
-        }
-        return sb.toString();
-    }
-
     private void setLoading(boolean loadingState) {
         loading.setVisibility(loadingState ? View.VISIBLE : View.GONE);
         loginButton.setEnabled(!loadingState);
+        usernameInput.setEnabled(!loadingState);
+        passwordInput.setEnabled(!loadingState);
+    }
+
+    private void hideKeyboard() {
+        View view = this.getCurrentFocus();
+        if (view != null) {
+            InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+            if (imm != null) {
+                imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+            }
+        }
     }
 
     private void onLoginSuccess(Player player) {
         String message = "Welcome, " + (player.getUsername() != null ? player.getUsername() : "player") + "!";
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
-        Intent intent = new Intent(this, PlayerDashboardActivity.class);
-        intent.putExtra(PlayerDashboardActivity.EXTRA_PLAYER_ID, player.getId());
+        Intent intent = new Intent(this, PlayerProfileActivity.class);
+        intent.putExtra(PlayerProfileActivity.EXTRA_PLAYER_ID, player.getId());
         startActivity(intent);
     }
 }
