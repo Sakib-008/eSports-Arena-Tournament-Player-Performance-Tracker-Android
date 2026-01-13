@@ -162,7 +162,7 @@ Run tests with:
 
 ## Contributing
 
-This is a course project for CSE 2200 (Advanced Programming Laboratory) at [Your University]. 
+This is a course project for CSE 2200 (Advanced Programming Laboratory) at Khulna University of Engineering and Technology (KUET). 
 
 ## Notes
 
