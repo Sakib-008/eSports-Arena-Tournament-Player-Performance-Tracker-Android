@@ -13,8 +13,13 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
 import com.example.esports_arena.data.PlayerRepository;
+import com.example.esports_arena.data.MatchRepository;
+import com.example.esports_arena.data.TournamentRepository;
 import com.example.esports_arena.model.Player;
 import com.example.esports_arena.model.TournamentStats;
+import com.example.esports_arena.model.Match;
+import com.example.esports_arena.model.Tournament;
+import com.example.esports_arena.service.TournamentStatsService;
 import com.github.mikephil.charting.charts.BarChart;
 import com.github.mikephil.charting.charts.PieChart;
 import com.github.mikephil.charting.components.Description;
@@ -50,8 +55,13 @@ public class PlayerStatsFragment extends Fragment {
     private MaterialAutoCompleteTextView statsTournamentSelector;
 
     private PlayerRepository playerRepository;
+    private MatchRepository matchRepository;
+    private TournamentRepository tournamentRepository;
+    private TournamentStatsService tournamentStatsService;
     private int playerId;
     private Player cachedPlayer;
+    private List<Match> allMatches;
+    private List<Tournament> allTournaments;
 
     public static PlayerStatsFragment newInstance(int playerId) {
         PlayerStatsFragment fragment = new PlayerStatsFragment();
@@ -83,6 +93,9 @@ public class PlayerStatsFragment extends Fragment {
         statsTournamentSelector = view.findViewById(R.id.statsTournamentSelector);
 
         playerRepository = new PlayerRepository();
+        matchRepository = new MatchRepository();
+        tournamentRepository = new TournamentRepository();
+        tournamentStatsService = new TournamentStatsService();
 
         playerId = getArguments() != null ? getArguments().getInt(ARG_PLAYER_ID, -1) : -1;
         if (playerId == -1) {
@@ -95,10 +108,43 @@ public class PlayerStatsFragment extends Fragment {
     }
 
     private void setupTournamentSelector() {
+        // Initial adapter - will be updated later
         ArrayAdapter<String> adapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_list_item_1, new String[]{"Overall"});
         statsTournamentSelector.setAdapter(adapter);
         statsTournamentSelector.setText("Overall", false);
-        statsTournamentSelector.setOnItemClickListener((parent, view, position, id) -> renderCurrentScope());
+        
+        // Make it non-editable so it acts like a spinner/dropdown
+        statsTournamentSelector.setKeyListener(null);
+        statsTournamentSelector.setInputType(0);
+        statsTournamentSelector.setFocusable(false);
+        
+        android.util.Log.d("PlayerStats", "Tournament selector configured as non-editable dropdown");
+        // Listener is set in updateTournamentSelectorListener()
+    }
+    
+    private void updateTournamentSelectorListener() {
+        // Clear any existing listeners first
+        statsTournamentSelector.setOnItemClickListener(null);
+        
+        // Set the item click listener - triggered when item is selected from dropdown
+        statsTournamentSelector.setOnItemClickListener((parent, view, position, id) -> {
+            String selected = (String) parent.getItemAtPosition(position);
+            android.util.Log.d("PlayerStats", "***** onItemClickListener - item clicked at position: " + position + ", selected: '" + selected + "' *****");
+            
+            // Explicitly set the text to the selected item
+            statsTournamentSelector.setText(selected, false);
+            
+            // Render the new selection
+            renderCurrentScope();
+        });
+        
+        // Also add a click listener to ensure the dropdown opens
+        statsTournamentSelector.setOnClickListener(v -> {
+            android.util.Log.d("PlayerStats", "onClickListener triggered - showing dropdown");
+            statsTournamentSelector.showDropDown();
+        });
+        
+        android.util.Log.d("PlayerStats", "===== Tournament selector listeners re-attached =====");
     }
 
     private void loadPlayer(int playerId) {
@@ -115,15 +161,38 @@ public class PlayerStatsFragment extends Fragment {
             }
             
             android.util.Log.d("PlayerStats", "Player loaded: " + player.getUsername());
-            if (player.getTournamentStats() != null) {
-                android.util.Log.d("PlayerStats", "Tournament stats: " + player.getTournamentStats().size() + " tournaments");
-                android.util.Log.d("PlayerStats", "Tournament names: " + player.getTournamentStats().keySet());
-            } else {
-                android.util.Log.d("PlayerStats", "Tournament stats is NULL");
-            }
-            
             cachedPlayer = player;
-            populateTournamentSelector(player); // This is async, renderCurrentScope is called inside it
+            
+            // Load all matches for tournament stats calculation
+            matchRepository.getAll().addOnCompleteListener(matchTask -> {
+                if (matchTask.isSuccessful()) {
+                    if (matchTask.getResult() != null) {
+                        allMatches = matchTask.getResult();
+                        android.util.Log.d("PlayerStats", "✓ Loaded " + allMatches.size() + " matches");
+                    } else {
+                        android.util.Log.w("PlayerStats", "✗ Match task result is null");
+                        allMatches = new ArrayList<>();
+                    }
+                } else {
+                    android.util.Log.e("PlayerStats", "✗ Failed to load matches: " + 
+                            (matchTask.getException() != null ? matchTask.getException().getMessage() : "unknown error"));
+                    allMatches = new ArrayList<>();
+                }
+                
+                // Also load all tournaments for tournament ID lookup
+                tournamentRepository.getAll().addOnCompleteListener(tournamentTask -> {
+                    if (tournamentTask.isSuccessful() && tournamentTask.getResult() != null) {
+                        allTournaments = tournamentTask.getResult();
+                        android.util.Log.d("PlayerStats", "✓ Loaded " + allTournaments.size() + " tournaments");
+                    } else {
+                        android.util.Log.e("PlayerStats", "✗ Failed to load tournaments");
+                        allTournaments = new ArrayList<>();
+                    }
+                    
+                    // Now populate the tournament selector with all data loaded
+                    populateTournamentSelector(player);
+                });
+            });
         });
     }
 
@@ -163,12 +232,35 @@ public class PlayerStatsFragment extends Fragment {
             }
             
             android.util.Log.d("PlayerStats", "Final scopes to display: " + distinctScopes);
+            
+            // IMPORTANT: Set listeners BEFORE setting adapter
+            statsTournamentSelector.setOnItemClickListener((parent, view, position, id) -> {
+                String selected = (String) parent.getItemAtPosition(position);
+                android.util.Log.d("PlayerStats", "$$$$$ OnItemClickListener fired - position: " + position + ", selected: '" + selected + "' $$$$$");
+                statsTournamentSelector.setText(selected, false);
+                renderCurrentScope();
+            });
+            
+            statsTournamentSelector.setOnClickListener(v -> {
+                android.util.Log.d("PlayerStats", "@@@@@ OnClickListener fired - showing dropdown @@@@@");
+                statsTournamentSelector.showDropDown();
+            });
+            
+            // NOW set the adapter
             ArrayAdapter<String> adapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_list_item_1, distinctScopes);
             statsTournamentSelector.setAdapter(adapter);
+            
+            // Set the current selection
             String current = statsTournamentSelector.getText() != null ? statsTournamentSelector.getText().toString() : "";
             if (!distinctScopes.contains(current)) {
                 statsTournamentSelector.setText(distinctScopes.get(0), false);
             }
+            
+            // Make sure the dropdown will show on click
+            statsTournamentSelector.setThreshold(1);
+            
+            android.util.Log.d("PlayerStats", "Tournament selector fully configured with " + distinctScopes.size() + " options");
+            
             // Now render after tournament selector is populated
             renderCurrentScope();
         });
@@ -234,33 +326,62 @@ public class PlayerStatsFragment extends Fragment {
     }
 
     private void renderCurrentScope() {
+        android.util.Log.d("PlayerStats", "===== renderCurrentScope() called =====");
         if (cachedPlayer == null) {
+            android.util.Log.e("PlayerStats", "cachedPlayer is null, cannot render");
             return;
         }
         ScopedStats scopedStats = scopedStatsForCurrentSelection(cachedPlayer);
+        android.util.Log.d("PlayerStats", "Got scoped stats: K=" + scopedStats.kills + " D=" + scopedStats.deaths + " A=" + scopedStats.assists);
         renderText(scopedStats);
         renderCharts(scopedStats);
     }
 
     private ScopedStats scopedStatsForCurrentSelection(Player player) {
         String selection = statsTournamentSelector.getText() != null ? statsTournamentSelector.getText().toString() : "Overall";
-        android.util.Log.d("PlayerStats", "Current selection: " + selection);
-        if (!"Overall".equalsIgnoreCase(selection)) {
-            Map<String, TournamentStats> byTournament = player.getTournamentStats();
-            if (byTournament != null) {
-                android.util.Log.d("PlayerStats", "Tournament map keys: " + byTournament.keySet());
-                TournamentStats scoped = byTournament.get(selection);
-                if (scoped != null) {
-                    android.util.Log.d("PlayerStats", "Found tournament stats: " + selection);
-                    return ScopedStats.fromTournament(scoped);
-                } else {
-                    android.util.Log.d("PlayerStats", "Tournament not found in map: " + selection);
-                }
+        android.util.Log.d("PlayerStats", "\n>>>>> scopedStatsForCurrentSelection() START");
+        android.util.Log.d("PlayerStats", "Selection: '" + selection + "'");
+        android.util.Log.d("PlayerStats", "AllMatches: " + (allMatches != null ? allMatches.size() : "null"));
+        android.util.Log.d("PlayerStats", "AllTournaments: " + (allTournaments != null ? allTournaments.size() : "null"));
+        
+        if (!"Overall".equalsIgnoreCase(selection) && allMatches != null && !allMatches.isEmpty()) {
+            // Find tournament ID from tournament name
+            int tournamentId = findTournamentIdByName(selection);
+            if (tournamentId != -1) {
+                android.util.Log.d("PlayerStats", "Tournament ID found: " + tournamentId);
+                TournamentStats tournamentStats = tournamentStatsService.getPlayerTournamentStats(player.getId(), tournamentId, allMatches);
+                android.util.Log.d("PlayerStats", "Returned stats: K=" + tournamentStats.getKills() + " D=" + tournamentStats.getDeaths() + " A=" + tournamentStats.getAssists());
+                return ScopedStats.fromTournament(tournamentStats);
             } else {
-                android.util.Log.d("PlayerStats", "Tournament map is null");
+                android.util.Log.w("PlayerStats", "Tournament ID NOT found for: '" + selection + "'");
             }
         }
+        
+        android.util.Log.d("PlayerStats", "Using overall stats");
+        android.util.Log.d("PlayerStats", ">>>>> scopedStatsForCurrentSelection() END\n");
         return ScopedStats.fromPlayer(player);
+    }
+    
+    private int findTournamentIdByName(String tournamentName) {
+        android.util.Log.d("PlayerStats", "findTournamentIdByName('" + tournamentName + "')");
+        
+        if (allTournaments == null || allTournaments.isEmpty()) {
+            android.util.Log.e("PlayerStats", "✗ Tournaments list is null or empty!");
+            return -1;
+        }
+        
+        android.util.Log.d("PlayerStats", "Searching through " + allTournaments.size() + " tournaments:");
+        // Search through all tournaments to find matching name
+        for (Tournament tournament : allTournaments) {
+            android.util.Log.d("PlayerStats", "  - Tournament ID=" + tournament.getId() + ", Name='" + tournament.getName() + "'");
+            if (tournament.getName() != null && tournament.getName().equals(tournamentName)) {
+                android.util.Log.d("PlayerStats", "✓ Match found! Returning ID: " + tournament.getId());
+                return tournament.getId();
+            }
+        }
+        
+        android.util.Log.w("PlayerStats", "✗ No tournament found matching: '" + tournamentName + "'");
+        return -1;
     }
 
     private static class ScopedStats {

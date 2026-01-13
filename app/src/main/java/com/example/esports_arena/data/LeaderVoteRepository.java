@@ -11,7 +11,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
 public class LeaderVoteRepository {
-    private static final String VOTES_NODE = "leaderVotes";
+    private static final String VOTES_NODE = "leader_votes";
 
     private final DatabaseReference votesRef;
     private final Executor callbackExecutor;
