@@ -297,13 +297,13 @@ public class PlayerStatsFragment extends Fragment {
     }
 
     private void renderText(ScopedStats stats) {
-        statsKills.setText("Kills: " + stats.kills);
-        statsDeaths.setText("Deaths: " + stats.deaths);
-        statsAssists.setText("Assists: " + stats.assists);
-        statsKd.setText("K/D: " + stats.kdRatio);
-        statsWinRate.setText("Win Rate: " + String.format("%.2f%%", stats.winRate));
-        statsMatches.setText("Matches Played: " + stats.matchesPlayed);
-        statsMatchesWon.setText("Matches Won: " + stats.matchesWon);
+        statsKills.setText(String.valueOf(stats.kills));
+        statsDeaths.setText(String.valueOf(stats.deaths));
+        statsAssists.setText(String.valueOf(stats.assists));
+        statsKd.setText(String.format("%.2f", stats.kdRatio));
+        statsWinRate.setText(String.format("%.2f%%", stats.winRate));
+        statsMatches.setText(String.valueOf(stats.matchesPlayed));
+        statsMatchesWon.setText(String.valueOf(stats.matchesWon));
     }
 
     private void renderCharts(ScopedStats stats) {

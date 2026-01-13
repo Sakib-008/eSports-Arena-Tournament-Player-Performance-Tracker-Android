@@ -15,12 +15,14 @@
     <color name="black">#FF000000</color>
     <color name="text_primary">#212121</color>
     <color name="text_secondary">#757575</color>
+    <color name="text_secondary_light">#B3E5FC</color>
     <color name="text_hint">#BDBDBD</color>
     
     <!-- Background Colors -->
     <color name="background">#FAFAFA</color>
     <color name="surface">#FFFFFF</color>
     <color name="surface_variant">#F5F5F5</color>
+    <color name="card_background">#FFFFFF</color>
 
     <!-- Status Colors -->
     <color name="success">#4CAF50</color>

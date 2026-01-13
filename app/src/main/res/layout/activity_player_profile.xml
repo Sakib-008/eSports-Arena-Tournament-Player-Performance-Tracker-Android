@@ -2,26 +2,34 @@
 <androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="@color/background">
 
     <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:background="@color/primary"
         android:theme="@style/ThemeOverlay.Material3.Dark.ActionBar">
 
         <androidx.appcompat.widget.Toolbar
             android:id="@+id/profileToolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
-            app:title="Profile" />
+            android:background="@color/primary"
+            app:title="Player Profile"
+            app:titleTextColor="@color/white" />
 
         <com.google.android.material.tabs.TabLayout
             android:id="@+id/profileTabLayout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:background="@color/primary_dark"
+            app:tabIndicatorColor="@color/secondary"
             app:tabIndicatorFullWidth="false"
-            app:tabMode="fixed"
-            app:tabGravity="fill" />
+            app:tabMode="scrollable"
+            app:tabGravity="start"
+            app:tabTextColor="@color/text_secondary_light"
+            app:tabSelectedTextColor="@color/white" />
     </com.google.android.material.appbar.AppBarLayout>
 
     <androidx.viewpager2.widget.ViewPager2
