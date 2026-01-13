@@ -4,8 +4,9 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_margin="8dp"
-    app:cardCornerRadius="8dp"
-    app:cardElevation="4dp">
+    app:cardCornerRadius="12dp"
+    app:cardElevation="4dp"
+    app:cardBackgroundColor="@color/surface">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -13,11 +14,13 @@
         android:orientation="vertical"
         android:padding="16dp">
 
+        <!-- Match Header with Teams -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:gravity="center_vertical">
+            android:gravity="center_vertical"
+            android:layout_marginBottom="12dp">
 
             <TextView
                 android:id="@+id/matchTeamA"
@@ -26,18 +29,27 @@
                 android:layout_weight="1"
                 android:textSize="16sp"
                 android:textStyle="bold"
+                android:textColor="@color/text_primary"
                 android:text="Team A" />
 
-            <TextView
-                android:id="@+id/matchVs"
+            <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="VS"
-                android:textSize="14sp"
-                android:textStyle="bold"
+                android:orientation="vertical"
                 android:gravity="center"
-                android:paddingLeft="16dp"
-                android:paddingRight="16dp" />
+                android:paddingLeft="12dp"
+                android:paddingRight="12dp">
+
+                <TextView
+                    android:id="@+id/matchVs"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="VS"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/secondary" />
+
+            </LinearLayout>
 
             <TextView
                 android:id="@+id/matchTeamB"
@@ -46,46 +58,91 @@
                 android:layout_weight="1"
                 android:textSize="16sp"
                 android:textStyle="bold"
+                android:textColor="@color/text_primary"
                 android:textAlignment="textEnd"
                 android:text="Team B" />
 
         </LinearLayout>
 
-        <TextView
-            android:id="@+id/matchTournament"
+        <!-- Divider -->
+        <View
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:textSize="13sp"
-            android:textColor="#666666"
-            android:layout_marginTop="8dp"
-            android:text="Tournament: Regional Championship" />
+            android:layout_height="1dp"
+            android:background="@color/divider"
+            android:layout_marginBottom="12dp" />
 
-        <TextView
-            android:id="@+id/matchRound"
+        <!-- Tournament and Round Info -->
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textSize="13sp"
-            android:textColor="#666666"
-            android:text="Round: Group Stage" />
+            android:orientation="horizontal"
+            android:layout_marginBottom="8dp">
 
-        <TextView
-            android:id="@+id/matchScheduledTime"
+            <TextView
+                android:id="@+id/matchTournament"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textSize="12sp"
+                android:textColor="@color/text_secondary"
+                android:text="Tournament: Regional Championship" />
+
+            <TextView
+                android:id="@+id/matchRound"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="12sp"
+                android:textColor="@color/text_secondary"
+                android:text="Round: Group Stage" />
+
+        </LinearLayout>
+
+        <!-- Scheduled Time -->
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textSize="14sp"
-            android:textColor="#1976D2"
-            android:textStyle="bold"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
             android:layout_marginTop="12dp"
-            android:text="Scheduled: 2024-01-15 14:00" />
+            android:paddingTop="12dp"
+            android:paddingBottom="8dp"
+            android:background="@color/surface_variant">
 
-        <TextView
-            android:id="@+id/matchStatus"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:textSize="12sp"
-            android:textColor="#FF6F00"
-            android:layout_marginTop="4dp"
-            android:text="Status: SCHEDULED" />
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:src="@android:drawable/ic_menu_today"
+                android:tint="@color/info"
+                android:layout_marginLeft="8dp"
+                android:layout_marginRight="8dp" />
+
+            <TextView
+                android:id="@+id/matchScheduledTime"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textSize="13sp"
+                android:textColor="@color/primary"
+                android:textStyle="bold"
+                android:text="Scheduled: 2024-01-15 14:00" />
+
+            <!-- Status Badge -->
+            <TextView
+                android:id="@+id/matchStatus"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="11sp"
+                android:textColor="@color/white"
+                android:textStyle="bold"
+                android:background="@drawable/status_badge"
+                android:paddingLeft="8dp"
+                android:paddingRight="8dp"
+                android:paddingTop="4dp"
+                android:paddingBottom="4dp"
+                android:layout_marginRight="8dp"
+                android:text="SCHEDULED" />
+
+        </LinearLayout>
 
     </LinearLayout>
 

@@ -1,51 +1,79 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:padding="12dp">
+    android:layout_margin="8dp"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="2dp"
+    app:cardBackgroundColor="@color/surface">
 
-    <TextView
-        android:id="@+id/leaderboardRank"
-        android:layout_width="wrap_content"
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="1."
-        android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
-        android:textStyle="bold"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        android:layout_marginEnd="12dp" />
+        android:padding="16dp">
 
-    <TextView
-        android:id="@+id/leaderboardTitle"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:text="Player Name"
-        android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toEndOf="@id/leaderboardRank"
-        app:layout_constraintEnd_toEndOf="parent" />
+        <!-- Rank Badge -->
+        <LinearLayout
+            android:id="@+id/rankBadge"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:background="@color/primary"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginEnd="12dp">
 
-    <TextView
-        android:id="@+id/leaderboardSubtitle1"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:text="Stat 1"
-        android:textAppearance="@style/TextAppearance.Material3.BodySmall"
-        app:layout_constraintTop_toBottomOf="@id/leaderboardTitle"
-        app:layout_constraintStart_toEndOf="@id/leaderboardRank"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginTop="4dp" />
+            <TextView
+                android:id="@+id/leaderboardRank"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="1"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:textColor="@color/white" />
+        </LinearLayout>
 
-    <TextView
-        android:id="@+id/leaderboardSubtitle2"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:text="Stat 2"
-        android:textAppearance="@style/TextAppearance.Material3.BodySmall"
-        app:layout_constraintTop_toBottomOf="@id/leaderboardSubtitle1"
-        app:layout_constraintStart_toEndOf="@id/leaderboardRank"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginTop="2dp" />
+        <!-- Player/Team Name -->
+        <TextView
+            android:id="@+id/leaderboardTitle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="Player Name"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="@color/text_primary"
+            app:layout_constraintTop_toTopOf="@id/rankBadge"
+            app:layout_constraintStart_toEndOf="@id/rankBadge"
+            app:layout_constraintEnd_toEndOf="parent" />
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+        <!-- Subtitle 1 -->
+        <TextView
+            android:id="@+id/leaderboardSubtitle1"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="K/D: 2.45"
+            android:textSize="13sp"
+            android:textColor="@color/text_secondary"
+            app:layout_constraintTop_toBottomOf="@id/leaderboardTitle"
+            app:layout_constraintStart_toEndOf="@id/rankBadge"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginTop="4dp" />
+
+        <!-- Subtitle 2 -->
+        <TextView
+            android:id="@+id/leaderboardSubtitle2"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="Matches: 12 | Win Rate: 75%"
+            android:textSize="12sp"
+            android:textColor="@color/text_hint"
+            app:layout_constraintTop_toBottomOf="@id/leaderboardSubtitle1"
+            app:layout_constraintStart_toEndOf="@id/rankBadge"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginTop="2dp" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</androidx.cardview.widget.CardView>
