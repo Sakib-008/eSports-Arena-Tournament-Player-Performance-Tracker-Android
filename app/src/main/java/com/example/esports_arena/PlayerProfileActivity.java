@@ -44,6 +44,8 @@ public class PlayerProfileActivity extends AppCompatActivity {
             } else if (position == 1) {
                 tab.setText("Stats");
             } else if (position == 2) {
+                tab.setText("Upcoming");
+            } else if (position == 3) {
                 tab.setText("Team");
             } else {
                 tab.setText("Leaderboard");
@@ -76,6 +78,8 @@ public class PlayerProfileActivity extends AppCompatActivity {
             adapter.notifyItemChanged(0);
             adapter.notifyItemChanged(1);
             adapter.notifyItemChanged(2);
+            adapter.notifyItemChanged(3);
+            adapter.notifyItemChanged(4);
         }
     }
 }

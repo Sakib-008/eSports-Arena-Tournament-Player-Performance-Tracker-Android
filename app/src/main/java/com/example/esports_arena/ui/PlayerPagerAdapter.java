@@ -9,6 +9,7 @@ import com.example.esports_arena.LeaderboardFragment;
 import com.example.esports_arena.PlayerProfileFragment;
 import com.example.esports_arena.PlayerStatsFragment;
 import com.example.esports_arena.TeamFragment;
+import com.example.esports_arena.UpcomingMatchesFragment;
 
 public class PlayerPagerAdapter extends FragmentStateAdapter {
 
@@ -26,9 +27,12 @@ public class PlayerPagerAdapter extends FragmentStateAdapter {
             return PlayerStatsFragment.newInstance(playerId);
         }
         if (position == 2) {
-            return TeamFragment.newInstance(playerId);
+            return UpcomingMatchesFragment.newInstance(playerId);
         }
         if (position == 3) {
+            return TeamFragment.newInstance(playerId);
+        }
+        if (position == 4) {
             return LeaderboardFragment.newInstance(playerId);
         }
         return PlayerProfileFragment.newInstance(playerId);
@@ -36,6 +40,6 @@ public class PlayerPagerAdapter extends FragmentStateAdapter {
 
     @Override
     public int getItemCount() {
-        return 4;
+        return 5;
     }
 }
