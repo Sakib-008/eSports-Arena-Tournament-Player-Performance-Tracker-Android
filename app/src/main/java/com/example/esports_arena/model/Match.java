@@ -16,9 +16,9 @@ public class Match {
     private int team2Id;
     private int team1Score;
     private int team2Score;
-    private long scheduledTime;
-    private long actualStartTime;
-    private long actualEndTime;
+    private String scheduledTime;      // Changed from long to String (ISO format in Firebase)
+    private String actualStartTime;    // Changed from long to String (ISO format in Firebase)
+    private String actualEndTime;      // Changed from long to String (ISO format in Firebase)
     private MatchStatus status;
     private String round;
     private Integer winnerId;
@@ -35,7 +35,7 @@ public class Match {
         this.tournamentId = tournamentId;
         this.team1Id = team1Id;
         this.team2Id = team2Id;
-        this.scheduledTime = scheduledTime;
+        setScheduledTimeFromLong(scheduledTime);
         this.round = round;
     }
 
@@ -87,28 +87,73 @@ public class Match {
         this.team2Score = team2Score;
     }
 
-    public long getScheduledTime() {
+    public String getScheduledTime() {
         return scheduledTime;
     }
 
-    public void setScheduledTime(long scheduledTime) {
+    public void setScheduledTime(String scheduledTime) {
         this.scheduledTime = scheduledTime;
     }
+    
+    // Convenience method to get as long
+    public long getScheduledTimeAsLong() {
+        if (scheduledTime == null || scheduledTime.isEmpty()) return 0;
+        try {
+            return Long.parseLong(scheduledTime);
+        } catch (NumberFormatException e) {
+            return 0;
+        }
+    }
+    
+    // Convenience method to set from long
+    public void setScheduledTimeFromLong(long time) {
+        this.scheduledTime = String.valueOf(time);
+    }
 
-    public long getActualStartTime() {
+    public String getActualStartTime() {
         return actualStartTime;
     }
 
-    public void setActualStartTime(long actualStartTime) {
+    public void setActualStartTime(String actualStartTime) {
         this.actualStartTime = actualStartTime;
     }
+    
+    // Convenience method to get as long
+    public long getActualStartTimeAsLong() {
+        if (actualStartTime == null || actualStartTime.isEmpty()) return 0;
+        try {
+            return Long.parseLong(actualStartTime);
+        } catch (NumberFormatException e) {
+            return 0;
+        }
+    }
+    
+    // Convenience method to set from long
+    public void setActualStartTimeFromLong(long time) {
+        this.actualStartTime = String.valueOf(time);
+    }
 
-    public long getActualEndTime() {
+    public String getActualEndTime() {
         return actualEndTime;
     }
 
-    public void setActualEndTime(long actualEndTime) {
+    public void setActualEndTime(String actualEndTime) {
         this.actualEndTime = actualEndTime;
+    }
+    
+    // Convenience method to get as long
+    public long getActualEndTimeAsLong() {
+        if (actualEndTime == null || actualEndTime.isEmpty()) return 0;
+        try {
+            return Long.parseLong(actualEndTime);
+        } catch (NumberFormatException e) {
+            return 0;
+        }
+    }
+    
+    // Convenience method to set from long
+    public void setActualEndTimeFromLong(long time) {
+        this.actualEndTime = String.valueOf(time);
     }
 
     public MatchStatus getStatus() {

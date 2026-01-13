@@ -8,6 +8,8 @@ import com.example.esports_arena.model.PlayerMatchStats;
 import com.example.esports_arena.model.TournamentStats;
 
 import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Service to calculate tournament-based statistics for players.
@@ -21,6 +23,7 @@ import java.util.List;
 public class TournamentStatsService {
     private final MatchRepository matchRepository;
     private final PlayerRepository playerRepository;
+    private Map<Integer, Integer> playerTeamCache = new HashMap<>();
 
     public TournamentStatsService() {
         this.matchRepository = new MatchRepository();
@@ -42,60 +45,105 @@ public class TournamentStatsService {
         
         if (allMatches == null || allMatches.isEmpty()) {
             android.util.Log.w("TournamentStats", "No matches provided!");
+            stats.setKills(0);
+            stats.setDeaths(0);
+            stats.setAssists(0);
+            stats.setMatchesPlayed(0);
+            stats.setMatchesWon(0);
             return stats;
         }
         
-        for (Match match : allMatches) {
-            android.util.Log.d("TournamentStats", "\nChecking Match ID: " + match.getId() + 
-                    " | TournamentId: " + match.getTournamentId() + 
-                    " | Status: " + match.getStatus() +
-                    " | PlayerStats count: " + (match.getPlayerStats() != null ? match.getPlayerStats().size() : "null"));
-            
-            // Only count completed matches in this tournament
-            if (match.getTournamentId() == tournamentId) {
-                android.util.Log.d("TournamentStats", "  ✓ Tournament matches!");
+        // First pass: collect all team IDs where player was involved and match result
+        Integer playerTeamId = playerTeamCache.get(playerId);
+        
+        try {
+            for (Match match : allMatches) {
+                if (match == null) continue;
                 
-                if (match.isCompleted()) {
-                    android.util.Log.d("TournamentStats", "  ✓ Match is completed!");
+                android.util.Log.d("TournamentStats", "\nChecking Match ID: " + match.getId() + 
+                        " | TournamentId: " + match.getTournamentId() + 
+                        " | Status: " + match.getStatus() +
+                        " | Team1: " + match.getTeam1Id() + " Team2: " + match.getTeam2Id() +
+                        " | PlayerStats count: " + (match.getPlayerStats() != null ? match.getPlayerStats().size() : "null"));
+                
+                // Only count completed matches in this tournament
+                if (match.getTournamentId() == tournamentId) {
+                    android.util.Log.d("TournamentStats", "  ✓ Tournament matches!");
                     
-                    // Find player's stats in this match
-                    if (match.getPlayerStats() != null) {
-                        android.util.Log.d("TournamentStats", "  Searching " + match.getPlayerStats().size() + " player entries...");
+                    if (match.isCompleted()) {
+                        android.util.Log.d("TournamentStats", "  ✓ Match is completed!");
                         
-                        for (PlayerMatchStats pms : match.getPlayerStats()) {
-                            if (pms.getPlayerId() == playerId) {
-                                android.util.Log.d("TournamentStats", "  ✓✓✓ FOUND PLAYER! K:" + pms.getKills() + " D:" + pms.getDeaths() + " A:" + pms.getAssists());
+                        // Find player's stats in this match
+                        if (match.getPlayerStats() != null && !match.getPlayerStats().isEmpty()) {
+                            android.util.Log.d("TournamentStats", "  Searching " + match.getPlayerStats().size() + " player entries...");
+                            
+                            boolean foundPlayer = false;
+                            for (PlayerMatchStats pms : match.getPlayerStats()) {
+                                if (pms == null) continue;
                                 
-                                kills += pms.getKills();
-                                deaths += pms.getDeaths();
-                                assists += pms.getAssists();
-                                matchesPlayed++;
-                                
-                                // Check if player's team won
-                                if (match.getWinnerId() != null) {
-                                    Player player = null;
-                                    try {
-                                        player = playerRepository.getById(playerId).getResult();
-                                        if (player != null && player.getTeamId() != null && player.getTeamId().equals(match.getWinnerId())) {
+                                if (pms.getPlayerId() == playerId) {
+                                    android.util.Log.d("TournamentStats", "  ✓✓✓ FOUND PLAYER! K:" + pms.getKills() + " D:" + pms.getDeaths() + " A:" + pms.getAssists());
+                                    
+                                    kills += pms.getKills();
+                                    deaths += pms.getDeaths();
+                                    assists += pms.getAssists();
+                                    matchesPlayed++;
+                                    foundPlayer = true;
+                                    
+                                    // Determine player's team - check which team roster this player belongs to
+                                    // We need to infer from the match structure
+                                    // For now, we'll try to get it from the player object once
+                                    if (playerTeamId == null) {
+                                        try {
+                                            // Try to fetch player synchronously (not recommended but quick fix)
+                                            android.util.Log.d("TournamentStats", "  Attempting to get player team...");
+                                            com.google.android.gms.tasks.Task<Player> playerTask = playerRepository.getById(playerId);
+                                            int retries = 0;
+                                            while (!playerTask.isComplete() && retries < 10) {
+                                                Thread.sleep(100);
+                                                retries++;
+                                            }
+                                            if (playerTask.isSuccessful() && playerTask.getResult() != null) {
+                                                Player p = playerTask.getResult();
+                                                if (p.getTeamId() != null) {
+                                                    playerTeamId = p.getTeamId();
+                                                    playerTeamCache.put(playerId, playerTeamId);
+                                                    android.util.Log.d("TournamentStats", "  Got player team: " + playerTeamId);
+                                                }
+                                            }
+                                        } catch (Exception e) {
+                                            android.util.Log.e("TournamentStats", "  Error getting player team", e);
+                                        }
+                                    }
+                                    
+                                    // Check if player's team won
+                                    if (match.getWinnerId() != null && playerTeamId != null) {
+                                        if (playerTeamId == match.getWinnerId()) {
                                             matchesWon++;
                                             android.util.Log.d("TournamentStats", "    Team WON this match!");
+                                        } else {
+                                            android.util.Log.d("TournamentStats", "    Team LOST (winner: " + match.getWinnerId() + ", player team: " + playerTeamId + ")");
                                         }
-                                    } catch (Exception e) {
-                                        android.util.Log.e("TournamentStats", "    Error checking team: " + e.getMessage());
                                     }
+                                    break;
                                 }
-                                break;
                             }
+                            
+                            if (!foundPlayer) {
+                                android.util.Log.d("TournamentStats", "  Player " + playerId + " not found in this match");
+                            }
+                        } else {
+                            android.util.Log.d("TournamentStats", "  ! playerStats is null or empty");
                         }
                     } else {
-                        android.util.Log.d("TournamentStats", "  ! playerStats is null");
+                        android.util.Log.d("TournamentStats", "  ✗ Match NOT completed (status: " + match.getStatus() + ")");
                     }
                 } else {
-                    android.util.Log.d("TournamentStats", "  ✗ Match NOT completed (status: " + match.getStatus() + ")");
+                    android.util.Log.d("TournamentStats", "  ✗ Different tournament (want " + tournamentId + ")");
                 }
-            } else {
-                android.util.Log.d("TournamentStats", "  ✗ Different tournament (want " + tournamentId + ")");
             }
+        } catch (Exception e) {
+            android.util.Log.e("TournamentStats", "Exception during stats calculation", e);
         }
         
         stats.setKills(kills);

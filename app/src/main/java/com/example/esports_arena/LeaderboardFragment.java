@@ -155,6 +155,7 @@ public class LeaderboardFragment extends Fragment {
         List<String> scopes = new ArrayList<>();
         scopes.add("Overall");
         
+        // Both Players and Teams can have tournament scopes
         if ("Players".equals(currentType)) {
             // Fetch tournaments directly from database
             playerRepository.getTournamentNames().addOnCompleteListener(task -> {
@@ -191,10 +192,37 @@ public class LeaderboardFragment extends Fragment {
                 leaderboardScopeSelector.setThreshold(1);
             });
         } else {
-            // For teams, just use Overall for now
-            ArrayAdapter<String> adapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_list_item_1, scopes);
-            leaderboardScopeSelector.setAdapter(adapter);
-            leaderboardScopeSelector.setText(scopes.get(0), false);
+            // For teams, also load tournament scopes
+            playerRepository.getTournamentNames().addOnCompleteListener(task -> {
+                List<String> finalScopes = new ArrayList<>(scopes);
+                
+                if (task.isSuccessful() && task.getResult() != null) {
+                    List<String> tournaments = task.getResult();
+                    android.util.Log.d("Leaderboard", "Got " + tournaments.size() + " tournaments for teams");
+                    finalScopes.addAll(tournaments);
+                }
+                
+                // Remove duplicates
+                List<String> distinctScopes = finalScopes.stream().distinct().collect(Collectors.toList());
+                
+                // Set listeners BEFORE setting adapter
+                leaderboardScopeSelector.setOnItemClickListener((parent, v, position, id) -> {
+                    String selected = (String) parent.getItemAtPosition(position);
+                    android.util.Log.d("Leaderboard", "Team scope selected: " + selected);
+                    leaderboardScopeSelector.setText(selected, false);
+                    currentScope = selected;
+                    refreshLeaderboard();
+                });
+                
+                leaderboardScopeSelector.setOnClickListener(v -> {
+                    leaderboardScopeSelector.showDropDown();
+                });
+                
+                ArrayAdapter<String> adapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_list_item_1, distinctScopes);
+                leaderboardScopeSelector.setAdapter(adapter);
+                leaderboardScopeSelector.setText(distinctScopes.get(0), false);
+                leaderboardScopeSelector.setThreshold(1);
+            });
         }
     }
 
@@ -355,18 +383,99 @@ public class LeaderboardFragment extends Fragment {
         
         List<LeaderboardAdapter.LeaderboardEntry> entries = new ArrayList<>();
         
-        for (Team t : allTeams) {
-            String name = t.getName() != null ? t.getName() : "Team " + t.getId();
-            String tag = t.getTag() != null ? " (" + t.getTag() + ")" : "";
-            String region = t.getRegion() != null ? t.getRegion() : "Unknown";
+        android.util.Log.d("Leaderboard", "===== Displaying teams for scope: " + currentScope + " =====");
+        
+        if ("Overall".equals(currentScope)) {
+            // Show all teams with basic info
+            for (Team t : allTeams) {
+                String name = t.getName() != null ? t.getName() : "Team " + t.getId();
+                String tag = t.getTag() != null ? " (" + t.getTag() + ")" : "";
+                String region = t.getRegion() != null ? t.getRegion() : "Unknown";
+                
+                entries.add(new LeaderboardAdapter.LeaderboardEntry(
+                        name + tag,
+                        "Region: " + region,
+                        "ID: " + t.getId(),
+                        t.getId()
+                ));
+            }
+        } else {
+            // Calculate tournament-specific stats for teams
+            int tournamentId = findTournamentIdByName(currentScope);
             
-            entries.add(new LeaderboardAdapter.LeaderboardEntry(
-                    name + tag,
-                    "Region: " + region,
-                    "ID: " + t.getId(),
-                    t.getId()
-            ));
+            if (tournamentId == -1) {
+                android.util.Log.e("Leaderboard", "Tournament not found: " + currentScope);
+                leaderboardStatus.setText("Tournament not found");
+                setLoading(false);
+                return;
+            }
+            
+            android.util.Log.d("Leaderboard", "Calculating team stats for tournament ID: " + tournamentId);
+            
+            for (Team t : allTeams) {
+                // Calculate team stats from matches
+                int matchesPlayed = 0;
+                int matchesWon = 0;
+                int totalKills = 0;
+                int totalDeaths = 0;
+                
+                for (Match m : allMatches) {
+                    if (m == null) continue;
+                    
+                    android.util.Log.d("Leaderboard", "  Checking match " + m.getId() + ": tournamentId=" + m.getTournamentId() + ", team1=" + m.getTeam1Id() + ", team2=" + m.getTeam2Id() + ", winnerId=" + m.getWinnerId());
+                    
+                    if (m.getTournamentId() != tournamentId) {
+                        continue;
+                    }
+                    
+                    if (m.getTeam1Id() == t.getId() || m.getTeam2Id() == t.getId()) {
+                        matchesPlayed++;
+                        android.util.Log.d("Leaderboard", "    Team " + t.getName() + " played this match");
+                        
+                        // Check if team won - SAFE null check
+                        Integer winnerId = m.getWinnerId();
+                        if (winnerId != null && winnerId == t.getId()) {
+                            matchesWon++;
+                            android.util.Log.d("Leaderboard", "    Team " + t.getName() + " WON this match");
+                        }
+                        
+                        // Add team's kills and deaths
+                        if (m.getTeam1Id() == t.getId()) {
+                            totalKills += m.getTeam1Score();
+                            totalDeaths += m.getTeam2Score();
+                        } else {
+                            totalKills += m.getTeam2Score();
+                            totalDeaths += m.getTeam1Score();
+                        }
+                    }
+                }
+                
+                if (matchesPlayed == 0) {
+                    android.util.Log.d("Leaderboard", "Team " + t.getName() + " has 0 matches in tournament");
+                    continue; // Skip teams that didn't play in this tournament
+                }
+                
+                double winRate = matchesPlayed == 0 ? 0.0 : (double) matchesWon / matchesPlayed * 100.0;
+                double kd = totalDeaths == 0 ? totalKills : (double) totalKills / totalDeaths;
+                
+                String name = t.getName() != null ? t.getName() : "Team " + t.getId();
+                String tag = t.getTag() != null ? " (" + t.getTag() + ")" : "";
+                
+                android.util.Log.d("Leaderboard", "Team " + name + ": Matches=" + matchesPlayed + " Won=" + matchesWon + " K/D=" + String.format("%.2f", kd));
+                
+                entries.add(new LeaderboardAdapter.LeaderboardEntry(
+                        name + tag,
+                        "Win Rate: " + String.format("%.1f%%", winRate) + " | K/D: " + String.format("%.2f", kd),
+                        "Matches: " + matchesPlayed + " | W/L: " + matchesWon + "/" + (matchesPlayed - matchesWon),
+                        winRate // Sort by win rate
+                ));
+            }
         }
+        
+        android.util.Log.d("Leaderboard", "Total team entries: " + entries.size());
+        
+        // Sort by score (win rate for tournament scope, ID for overall) descending
+        entries.sort((a, b) -> Double.compare(b.score, a.score));
         
         leaderboardAdapter.setEntries(entries);
         setLoading(false);

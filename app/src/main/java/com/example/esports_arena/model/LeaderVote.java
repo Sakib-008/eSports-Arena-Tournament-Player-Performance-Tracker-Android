@@ -4,7 +4,7 @@ public class LeaderVote {
     private int teamId;
     private int voterId;
     private int candidateId;
-    private long voteTime;
+    private String voteTime;
 
     public LeaderVote() {
     }
@@ -13,7 +13,7 @@ public class LeaderVote {
         this.teamId = teamId;
         this.voterId = voterId;
         this.candidateId = candidateId;
-        this.voteTime = voteTime;
+        setVoteTimeFromLong(voteTime);
     }
 
     public int getTeamId() {
@@ -40,11 +40,28 @@ public class LeaderVote {
         this.candidateId = candidateId;
     }
 
-    public long getVoteTime() {
+    // Firebase requires String getter/setter for deserialization
+    public String getVoteTime() {
         return voteTime;
     }
 
-    public void setVoteTime(long voteTime) {
+    public void setVoteTime(String voteTime) {
         this.voteTime = voteTime;
+    }
+
+    // Convenience methods for long conversion
+    public long getVoteTimeAsLong() {
+        if (voteTime == null || voteTime.isEmpty()) {
+            return 0L;
+        }
+        try {
+            return Long.parseLong(voteTime);
+        } catch (NumberFormatException e) {
+            return 0L;
+        }
+    }
+
+    public void setVoteTimeFromLong(long voteTime) {
+        this.voteTime = String.valueOf(voteTime);
     }
 }
