@@ -114,12 +114,12 @@ public class TeamFragment extends Fragment {
             }
             Team team = task.getResult();
             teamName.setText(team.getName() != null ? team.getName() : "Team " + teamId);
-            teamTag.setText(team.getTag() != null ? "Tag: " + team.getTag() : "Tag: —");
-            teamRegion.setText(team.getRegion() != null ? "Region: " + team.getRegion() : "Region: —");
+            teamTag.setText(team.getTag() != null ? team.getTag() : "—");
+            teamRegion.setText(team.getRegion() != null ? team.getRegion() : "—");
             if (team.getLeaderId() != null) {
                 fetchLeaderName(team.getLeaderId());
             } else {
-                teamLeader.setText("Leader: —");
+                teamLeader.setText("—");
             }
         });
     }
@@ -127,12 +127,12 @@ public class TeamFragment extends Fragment {
     private void fetchLeaderName(int leaderId) {
         playerRepository.getById(leaderId).addOnCompleteListener(task -> {
             if (!task.isSuccessful() || task.getResult() == null) {
-                teamLeader.setText("Leader: " + leaderId);
+                teamLeader.setText(String.valueOf(leaderId));
                 return;
             }
             Player leader = task.getResult();
             String name = leader.getUsername() != null ? leader.getUsername() : "Player " + leaderId;
-            teamLeader.setText("Leader: " + name);
+            teamLeader.setText(name);
         });
     }
 
