@@ -93,15 +93,35 @@
             </com.google.android.material.textfield.TextInputLayout>
 
             <!-- Status Message -->
-            <TextView
-                android:id="@+id/statusText"
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textAlignment="center"
-                android:textColor="@color/error"
-                android:textSize="14sp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
                 android:layout_marginBottom="16dp"
-                android:visibility="gone" />
+                android:visibility="gone"
+                android:id="@+id/errorContainer"
+                android:background="#FFEBEE"
+                android:padding="12dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="⚠"
+                    android:textColor="@color/error"
+                    android:textSize="20sp"
+                    android:textStyle="bold"
+                    android:layout_marginEnd="12dp" />
+
+                <TextView
+                    android:id="@+id/statusText"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:textColor="@color/error"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
 
             <!-- Login Button -->
             <com.google.android.material.button.MaterialButton

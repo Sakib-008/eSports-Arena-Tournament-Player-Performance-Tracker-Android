@@ -7,6 +7,7 @@ import android.text.TextUtils;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
+import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -26,6 +27,7 @@ public class LoginActivity extends AppCompatActivity {
     private TextInputEditText usernameInput;
     private TextInputEditText passwordInput;
     private TextView statusText;
+    private LinearLayout errorContainer;
     private ProgressBar loading;
     private Button loginButton;
 
@@ -44,6 +46,7 @@ public class LoginActivity extends AppCompatActivity {
         usernameInput = findViewById(R.id.usernameInput);
         passwordInput = findViewById(R.id.passwordInput);
         statusText = findViewById(R.id.statusText);
+        errorContainer = findViewById(R.id.errorContainer);
         loading = findViewById(R.id.loading);
         loginButton = findViewById(R.id.loginButton);
 
@@ -51,7 +54,7 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     private void attemptLogin() {
-        statusText.setText("");
+        errorContainer.setVisibility(View.GONE);
         usernameLayout.setError(null);
         passwordLayout.setError(null);
         String username = usernameInput.getText() != null ? usernameInput.getText().toString().trim() : "";
@@ -59,10 +62,12 @@ public class LoginActivity extends AppCompatActivity {
 
         if (TextUtils.isEmpty(username)) {
             usernameLayout.setError("Username required");
+            showError("Username required");
             return;
         }
         if (TextUtils.isEmpty(password)) {
             passwordLayout.setError("Password required");
+            showError("Password required");
             return;
         }
 
@@ -71,7 +76,7 @@ public class LoginActivity extends AppCompatActivity {
         playerRepository.getByUsername(username).addOnCompleteListener(task -> {
             setLoading(false);
             if (!task.isSuccessful()) {
-                statusText.setText("Network error. Try again.");
+                showError("Network error. Try again.");
                 return;
             }
 
@@ -81,7 +86,7 @@ public class LoginActivity extends AppCompatActivity {
                 playerRepository.getAll().addOnCompleteListener(allTask -> {
                     setLoading(false);
                     if (!allTask.isSuccessful() || allTask.getResult() == null) {
-                        statusText.setText("User not found");
+                        showError("User not found");
                         return;
                     }
                     Player match = null;
@@ -92,7 +97,8 @@ public class LoginActivity extends AppCompatActivity {
                         }
                     }
                     if (match == null) {
-                        statusText.setText("User not found (check exact username)");
+                        showError("Invalid username or password");
+                        usernameLayout.setError(" ");
                         return;
                     }
                     verifyPasswordAndLogin(match, password);
@@ -106,10 +112,16 @@ public class LoginActivity extends AppCompatActivity {
 
     private void verifyPasswordAndLogin(Player player, String password) {
         if (!password.equals(player.getPassword())) {
-            statusText.setText("Invalid credentials");
+            showError("Invalid username or password");
+            passwordLayout.setError(" ");
             return;
         }
         onLoginSuccess(player);
+    }
+
+    private void showError(String message) {
+        statusText.setText(message);
+        errorContainer.setVisibility(View.VISIBLE);
     }
 
     private void setLoading(boolean loadingState) {
