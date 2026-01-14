@@ -154,6 +154,15 @@ public class PlayerProfileFragment extends Fragment {
             setLoading(false);
             if (task.isSuccessful()) {
                 profileStatus.setText(available ? "Set to available" : "Set to unavailable");
+                
+                // Show success alert
+                if (isAdded() && getContext() != null) {
+                    new androidx.appcompat.app.AlertDialog.Builder(requireContext())
+                        .setTitle("Availability Updated")
+                        .setMessage(available ? "You are now marked as available for matches." : "You are now marked as unavailable.")
+                        .setPositiveButton("OK", null)
+                        .show();
+                }
             } else {
                 profileStatus.setText("Failed to update availability");
             }

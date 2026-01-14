@@ -11,6 +11,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.esports_arena.R;
 import com.example.esports_arena.model.Match;
 import com.example.esports_arena.model.Team;
+import com.example.esports_arena.model.Tournament;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -23,9 +24,11 @@ public class UpcomingMatchesAdapter extends RecyclerView.Adapter<UpcomingMatches
 
     private final List<MatchDisplayData> matches = new ArrayList<>();
     private final Map<Integer, Team> teamMap;
+    private final Map<Integer, Tournament> tournamentMap;
 
-    public UpcomingMatchesAdapter(Map<Integer, Team> teamMap) {
+    public UpcomingMatchesAdapter(Map<Integer, Team> teamMap, Map<Integer, Tournament> tournamentMap) {
         this.teamMap = teamMap;
+        this.tournamentMap = tournamentMap;
     }
 
     public void setMatches(List<Match> matchesList) {
@@ -58,7 +61,15 @@ public class UpcomingMatchesAdapter extends RecyclerView.Adapter<UpcomingMatches
 
         holder.teamA.setText(team1Name);
         holder.teamB.setText(team2Name);
-        holder.tournament.setText("Tournament: " + (match.getTournamentId() > 0 ? "Tournament " + match.getTournamentId() : "TBD"));
+        
+        // Get tournament name
+        String tournamentName = "TBD";
+        if (match.getTournamentId() > 0 && tournamentMap.containsKey(match.getTournamentId())) {
+            tournamentName = tournamentMap.get(match.getTournamentId()).getName();
+        } else if (match.getTournamentId() > 0) {
+            tournamentName = "Tournament " + match.getTournamentId();
+        }
+        holder.tournament.setText("Tournament: " + tournamentName);
         holder.round.setText("Round: " + (match.getRound() != null ? match.getRound() : "TBD"));
         
         // Format scheduled time
@@ -76,7 +87,7 @@ public class UpcomingMatchesAdapter extends RecyclerView.Adapter<UpcomingMatches
         holder.scheduledTime.setText(scheduledTimeStr);
         
         // Status
-        String status = match.getStatus() != null ? match.getStatus().toString() : "SCHEDULED";
+        String status = match.getStatus() != null ? match.getStatus() : "SCHEDULED";
         holder.status.setText("Status: " + status);
     }
 

@@ -186,24 +186,23 @@ public class LeaderboardFragment extends Fragment {
                 });
                 
                 // NOW set the adapter
+                if (!isAdded() || getContext() == null) return; // Safety check
                 ArrayAdapter<String> adapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_list_item_1, distinctScopes);
-                leaderboardScopeSelector.setAdapter(adapter);
-                leaderboardScopeSelector.setText(distinctScopes.get(0), false);
-                leaderboardScopeSelector.setThreshold(1);
-            });
-        } else {
-            // For teams, also load tournament scopes
-            playerRepository.getTournamentNames().addOnCompleteListener(task -> {
-                List<String> finalScopes = new ArrayList<>(scopes);
-                
-                if (task.isSuccessful() && task.getResult() != null) {
-                    List<String> tournaments = task.getResult();
-                    android.util.Log.d("Leaderboard", "Got " + tournaments.size() + " tournaments for teams");
-                    finalScopes.addAll(tournaments);
-                }
-                
-                // Remove duplicates
-                List<String> distinctScopes = finalScopes.stream().distinct().collect(Collectors.toList());
+            leaderboardScopeSelector.setAdapter(adapter);
+            leaderboardScopeSelector.setText(distinctScopes.get(0), false);
+            leaderboardScopeSelector.setThreshold(1);
+        });
+    } else {
+        // For teams, also load tournament scopes
+        playerRepository.getTournamentNames().addOnCompleteListener(task -> {
+            List<String> finalScopes = new ArrayList<>(scopes);
+            
+            if (task.isSuccessful() && task.getResult() != null) {
+                List<String> tournaments = task.getResult();
+                finalScopes.addAll(tournaments);
+            }
+            
+            List<String> distinctScopes = finalScopes.stream().distinct().collect(Collectors.toList());
                 
                 // Set listeners BEFORE setting adapter
                 leaderboardScopeSelector.setOnItemClickListener((parent, v, position, id) -> {
@@ -218,6 +217,7 @@ public class LeaderboardFragment extends Fragment {
                     leaderboardScopeSelector.showDropDown();
                 });
                 
+                if (!isAdded() || getContext() == null) return; // Safety check
                 ArrayAdapter<String> adapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_list_item_1, distinctScopes);
                 leaderboardScopeSelector.setAdapter(adapter);
                 leaderboardScopeSelector.setText(distinctScopes.get(0), false);
@@ -386,17 +386,49 @@ public class LeaderboardFragment extends Fragment {
         android.util.Log.d("Leaderboard", "===== Displaying teams for scope: " + currentScope + " =====");
         
         if ("Overall".equals(currentScope)) {
-            // Show all teams with basic info
+            // Show all teams with overall win/loss stats
             for (Team t : allTeams) {
                 String name = t.getName() != null ? t.getName() : "Team " + t.getId();
                 String tag = t.getTag() != null ? " (" + t.getTag() + ")" : "";
                 String region = t.getRegion() != null ? t.getRegion() : "Unknown";
                 
+                // Calculate overall stats from all matches
+                int totalMatches = 0;
+                int totalWins = 0;
+                int totalKills = 0;
+                int totalDeaths = 0;
+                
+                for (Match m : allMatches) {
+                    if (m == null || !"COMPLETED".equals(m.getStatus())) continue;
+                    
+                    if (m.getTeam1Id() == t.getId() || m.getTeam2Id() == t.getId()) {
+                        totalMatches++;
+                        
+                        // Check if team won
+                        Integer winnerId = m.getWinnerId();
+                        if (winnerId != null && winnerId == t.getId()) {
+                            totalWins++;
+                        }
+                        
+                        // Add kills and deaths
+                        if (m.getTeam1Id() == t.getId()) {
+                            totalKills += m.getTeam1Score();
+                            totalDeaths += m.getTeam2Score();
+                        } else {
+                            totalKills += m.getTeam2Score();
+                            totalDeaths += m.getTeam1Score();
+                        }
+                    }
+                }
+                
+                int totalLosses = totalMatches - totalWins;
+                double winRate = totalMatches == 0 ? 0.0 : (double) totalWins / totalMatches * 100.0;
+                
                 entries.add(new LeaderboardAdapter.LeaderboardEntry(
                         name + tag,
-                        "Region: " + region,
-                        "ID: " + t.getId(),
-                        t.getId()
+                        "Region: " + region + " | Win Rate: " + String.format("%.1f%%", winRate),
+                        "Matches: " + totalMatches + " | W/L: " + totalWins + "/" + totalLosses,
+                        winRate // Sort by win rate
                 ));
             }
         } else {
@@ -456,16 +488,15 @@ public class LeaderboardFragment extends Fragment {
                 }
                 
                 double winRate = matchesPlayed == 0 ? 0.0 : (double) matchesWon / matchesPlayed * 100.0;
-                double kd = totalDeaths == 0 ? totalKills : (double) totalKills / totalDeaths;
                 
                 String name = t.getName() != null ? t.getName() : "Team " + t.getId();
                 String tag = t.getTag() != null ? " (" + t.getTag() + ")" : "";
                 
-                android.util.Log.d("Leaderboard", "Team " + name + ": Matches=" + matchesPlayed + " Won=" + matchesWon + " K/D=" + String.format("%.2f", kd));
+                android.util.Log.d("Leaderboard", "Team " + name + ": Matches=" + matchesPlayed + " Won=" + matchesWon + " WinRate=" + String.format("%.1f%%", winRate));
                 
                 entries.add(new LeaderboardAdapter.LeaderboardEntry(
                         name + tag,
-                        "Win Rate: " + String.format("%.1f%%", winRate) + " | K/D: " + String.format("%.2f", kd),
+                        "Win Rate: " + String.format("%.1f%%", winRate),
                         "Matches: " + matchesPlayed + " | W/L: " + matchesWon + "/" + (matchesPlayed - matchesWon),
                         winRate // Sort by win rate
                 ));

@@ -1,8 +1,11 @@
 package com.example.esports_arena.model;
 
 import com.google.firebase.database.IgnoreExtraProperties;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 @IgnoreExtraProperties
 public class Match {
@@ -19,7 +22,7 @@ public class Match {
     private String scheduledTime;      // Changed from long to String (ISO format in Firebase)
     private String actualStartTime;    // Changed from long to String (ISO format in Firebase)
     private String actualEndTime;      // Changed from long to String (ISO format in Firebase)
-    private MatchStatus status;
+    private String status;              // Changed to String for Firebase compatibility
     private String round;
     private Integer winnerId;
     private List<PlayerMatchStats> playerStats;
@@ -27,7 +30,7 @@ public class Match {
 
     public Match() {
         this.playerStats = new ArrayList<>();
-        this.status = MatchStatus.SCHEDULED;
+        this.status = "SCHEDULED";
     }
 
     public Match(int tournamentId, int team1Id, int team2Id, long scheduledTime, String round) {
@@ -98,9 +101,30 @@ public class Match {
     // Convenience method to get as long
     public long getScheduledTimeAsLong() {
         if (scheduledTime == null || scheduledTime.isEmpty()) return 0;
+        
+        // Try parsing as a number (milliseconds since epoch)
         try {
             return Long.parseLong(scheduledTime);
         } catch (NumberFormatException e) {
+            // Not a number, try ISO date format
+        }
+        
+        // Try parsing as ISO date format (e.g., "2026-01-15T14:00:00")
+        try {
+            // Remove milliseconds and timezone if present
+            String dateStr = scheduledTime;
+            if (dateStr.contains(".")) {
+                dateStr = dateStr.substring(0, dateStr.indexOf("."));
+            }
+            if (dateStr.contains("Z")) {
+                dateStr = dateStr.replace("Z", "");
+            }
+            
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US);
+            Date date = sdf.parse(dateStr);
+            return date.getTime();
+        } catch (Exception e) {
+            android.util.Log.w("Match", "Failed to parse scheduledTime: " + scheduledTime + " Error: " + e.getMessage());
             return 0;
         }
     }
@@ -121,9 +145,28 @@ public class Match {
     // Convenience method to get as long
     public long getActualStartTimeAsLong() {
         if (actualStartTime == null || actualStartTime.isEmpty()) return 0;
+        
+        // Try parsing as a number (milliseconds since epoch)
         try {
             return Long.parseLong(actualStartTime);
         } catch (NumberFormatException e) {
+            // Not a number, try ISO date format
+        }
+        
+        // Try parsing as ISO date format
+        try {
+            String dateStr = actualStartTime;
+            if (dateStr.contains(".")) {
+                dateStr = dateStr.substring(0, dateStr.indexOf("."));
+            }
+            if (dateStr.contains("Z")) {
+                dateStr = dateStr.replace("Z", "");
+            }
+            
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US);
+            Date date = sdf.parse(dateStr);
+            return date.getTime();
+        } catch (Exception e) {
             return 0;
         }
     }
@@ -144,9 +187,28 @@ public class Match {
     // Convenience method to get as long
     public long getActualEndTimeAsLong() {
         if (actualEndTime == null || actualEndTime.isEmpty()) return 0;
+        
+        // Try parsing as a number (milliseconds since epoch)
         try {
             return Long.parseLong(actualEndTime);
         } catch (NumberFormatException e) {
+            // Not a number, try ISO date format
+        }
+        
+        // Try parsing as ISO date format
+        try {
+            String dateStr = actualEndTime;
+            if (dateStr.contains(".")) {
+                dateStr = dateStr.substring(0, dateStr.indexOf("."));
+            }
+            if (dateStr.contains("Z")) {
+                dateStr = dateStr.replace("Z", "");
+            }
+            
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US);
+            Date date = sdf.parse(dateStr);
+            return date.getTime();
+        } catch (Exception e) {
             return 0;
         }
     }
@@ -156,12 +218,23 @@ public class Match {
         this.actualEndTime = String.valueOf(time);
     }
 
-    public MatchStatus getStatus() {
-        return status;
+    public String getStatus() {
+        return status != null ? status : "SCHEDULED";
     }
 
-    public void setStatus(MatchStatus status) {
+    public void setStatus(String status) {
         this.status = status;
+    }
+    
+    public MatchStatus getStatusEnum() {
+        if (status == null || status.isEmpty()) {
+            return MatchStatus.SCHEDULED;
+        }
+        try {
+            return MatchStatus.valueOf(status);
+        } catch (IllegalArgumentException e) {
+            return MatchStatus.SCHEDULED;
+        }
     }
 
     public String getRound() {
@@ -189,14 +262,14 @@ public class Match {
     }
 
     public boolean isCompleted() {
-        // Check both the enum status and the boolean flag
-        return (status == MatchStatus.COMPLETED) || completed;
+        // Check both the string status and the boolean flag
+        return (status != null && status.equals("COMPLETED")) || completed;
     }
     
     public void setCompleted(boolean completed) {
         this.completed = completed;
-        if (completed && status != MatchStatus.COMPLETED) {
-            this.status = MatchStatus.COMPLETED;
+        if (completed && (status == null || !status.equals("COMPLETED"))) {
+            this.status = "COMPLETED";
         }
     }
 

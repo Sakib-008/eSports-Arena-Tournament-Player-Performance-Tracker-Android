@@ -277,6 +277,7 @@ public class PlayerStatsFragment extends Fragment {
             });
             
             // NOW set the adapter
+            if (!isAdded() || getContext() == null) return; // Safety check
             ArrayAdapter<String> adapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_list_item_1, distinctScopes);
             statsTournamentSelector.setAdapter(adapter);
             
